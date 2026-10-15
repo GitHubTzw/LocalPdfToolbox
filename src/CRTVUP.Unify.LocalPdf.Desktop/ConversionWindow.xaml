@@ -1,0 +1,39 @@
+<Window x:Class="CRTVUP.Unify.LocalPdf.Desktop.ConversionWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="本地格式转换" Width="840" Height="700" MinWidth="740" MinHeight="620"
+ Style="{StaticResource {x:Type Window}}" WindowStartupLocation="CenterOwner" Closing="Conversion_Closing">
+ <Grid Margin="26">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel Margin="0,0,0,20"><TextBlock Text="本地格式转换" FontSize="23" FontWeight="SemiBold"/>
+   <TextBlock Text="文件由应用内部处理，无上传、无水印。结果使用新文件名保存。" Foreground="#74867E" Margin="0,7,0,0"/></StackPanel>
+  <TabControl Grid.Row="1" x:Name="ConversionTabs" Background="White" BorderBrush="#DCE5E1" Padding="20">
+   <TabItem Header="  PDF 导出为其他格式  ">
+    <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <TextBlock x:Name="PdfSourceLabel" FontWeight="SemiBold" Margin="0,0,0,13"/>
+     <ListBox Grid.Row="1" x:Name="FormatList" Height="260" BorderBrush="#DCE5E1" HorizontalContentAlignment="Stretch" SelectionChanged="Format_Changed">
+      <ListBox.ItemTemplate><DataTemplate><StackPanel Margin="8,5"><TextBlock Text="{Binding Label}" FontWeight="SemiBold"/><TextBlock Text="{Binding Detail}" Foreground="#74867E" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/></StackPanel></DataTemplate></ListBox.ItemTemplate>
+     </ListBox>
+     <StackPanel Grid.Row="2" Margin="0,14,0,12">
+      <StackPanel Orientation="Horizontal"><TextBlock Text="图片分辨率" VerticalAlignment="Center" Margin="0,0,12,0"/><ComboBox x:Name="DpiChoice" SelectedIndex="1" Width="160" Padding="7"><ComboBoxItem Content="96 DPI · 文件较小"/><ComboBoxItem Content="150 DPI · 推荐"/><ComboBoxItem Content="200 DPI · 更清晰"/></ComboBox></StackPanel>
+      <TextBlock x:Name="ExportDetail" Foreground="#8A713C" TextWrapping="Wrap" FontSize="12" LineHeight="19" Margin="0,12,0,0"/>
+     </StackPanel>
+     <Button Grid.Row="3" x:Name="ConvertExport" Content="转换并另存为新文件" Style="{StaticResource PrimaryButton}" Click="ExportFormat_Click" HorizontalAlignment="Right"/>
+    </Grid>
+   </TabItem>
+   <TabItem Header="  图片 / 文字转 PDF  ">
+    <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <ComboBox x:Name="ImportKind" SelectedIndex="0" Padding="10" SelectionChanged="ImportKind_Changed"><ComboBoxItem Content="图片 → PDF（PNG / JPEG / BMP / TIFF）"/><ComboBoxItem Content="Office / TXT 文字 → PDF（DOCX / XLSX / PPTX / TXT）"/></ComboBox>
+     <TextBlock Grid.Row="1" x:Name="ImportDetail" TextWrapping="Wrap" Foreground="#8A713C" LineHeight="20" Margin="0,14,0,14"/>
+     <Button Grid.Row="2" Content="＋  选择本地文件" Click="ChooseInput_Click" HorizontalAlignment="Left" Margin="0,0,0,12"/>
+     <ListBox Grid.Row="3" x:Name="InputList" BorderBrush="#DCE5E1" Margin="0,0,0,14" DisplayMemberPath="Name"/>
+     <StackPanel Grid.Row="4"><TextBlock x:Name="ImportActionHint" Text="转换后加入主工作区，可继续排序、编辑和合并，再导出 PDF。" Foreground="#74867E" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10"/>
+      <Button x:Name="ImportConvert" Content="转换并加入工作区" Style="{StaticResource PrimaryButton}" Click="ImportConvert_Click" HorizontalAlignment="Right"/></StackPanel>
+    </Grid>
+   </TabItem>
+  </TabControl>
+  <Grid Grid.Row="2" Margin="0,18,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <StackPanel VerticalAlignment="Center"><TextBlock x:Name="ConversionStatus" Text="准备就绪。" TextWrapping="Wrap" FontSize="12"/><ProgressBar x:Name="ConversionProgress" Height="3" IsIndeterminate="True" Visibility="Collapsed" Margin="0,9,18,0"/></StackPanel>
+   <Button Grid.Column="1" x:Name="CancelConversion" Content="关闭" Click="CancelConversion_Click" Margin="16,0,0,0" VerticalAlignment="Center"/>
+  </Grid>
+ </Grid>
+</Window>

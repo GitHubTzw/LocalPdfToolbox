@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+artifacts/
+dist/
+*.user
+*.suo
+*.lnk
+*.pdf
+!tests/fixtures/*.pdf

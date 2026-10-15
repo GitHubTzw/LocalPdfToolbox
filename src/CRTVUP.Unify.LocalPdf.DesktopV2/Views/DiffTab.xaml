@@ -1,0 +1,214 @@
+<UserControl x:Class="CRTVUP.Unify.LocalPdf.DesktopV2.Views.DiffTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:CRTVUP.Unify.LocalPdf.DesktopV2.Controls">
+  <UserControl.Resources>
+    <Style x:Key="DiffCell" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+      <Setter Property="FontSize" Value="12.5" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="7,0" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style x:Key="DiffNumberCell" TargetType="TextBlock" BasedOn="{StaticResource DiffCell}">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="HorizontalAlignment" Value="Right" />
+      <Setter Property="FontSize" Value="11.5" />
+      <Setter Property="TextTrimming" Value="None" />
+    </Style>
+  </UserControl.Resources>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <!-- 页头：标题与说明在左，对比模式与结果过滤在右。 -->
+    <Grid Grid.Row="0" Margin="20,16,20,12">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <StackPanel VerticalAlignment="Center">
+        <TextBlock Text="文件对比" Style="{StaticResource PageHeader}" />
+        <TextBlock Text="文本逐行并排对比、二进制字节对比、目录递归对比；两侧内容只在本机内存中处理。"
+                   Style="{StaticResource PageHint}" Margin="0,5,0,0" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+        <ComboBox x:Name="ModeChoice" Width="132" SelectedIndex="0" Margin="0,0,14,0" SelectionChanged="Mode_Changed"
+                  ToolTip="文本对比按行对齐；二进制对比只看字节；目录对比递归比较两个文件夹">
+          <ComboBoxItem Content="文本对比" />
+          <ComboBoxItem Content="二进制对比" />
+          <ComboBoxItem Content="目录对比" />
+        </ComboBox>
+        <CheckBox x:Name="OnlyDifferences" Content="只显示差异行" VerticalAlignment="Center"
+                  Checked="Filter_Changed" Unchecked="Filter_Changed" />
+      </StackPanel>
+    </Grid>
+
+    <!-- 操作条：执行动作、忽略规则与行内差异开关。 -->
+    <WrapPanel Grid.Row="1" Margin="20,0,20,12">
+      <Button Content="对比" Click="Compare_Click" Margin="0,0,6,6" Padding="18,7" Style="{StaticResource PrimaryButton}" />
+      <Button Content="交换两侧" Click="Swap_Click" Margin="0,0,6,6" Padding="12,7" />
+      <Button Content="清空" Click="Clear_Click" Margin="0,0,6,6" Padding="12,7" />
+      <Button Content="导出报告" Click="ExportReport_Click" Margin="0,0,6,6" Padding="12,7" ToolTip="把当前对比结果另存为新的本地文本文件" />
+      <Border Width="1" Background="{StaticResource BorderBrush}" Margin="8,4,14,10" />
+      <CheckBox x:Name="IgnoreCase" Content="忽略大小写" Margin="0,0,12,6" VerticalAlignment="Center" />
+      <CheckBox x:Name="IgnoreWhitespace" Content="忽略空白" Margin="0,0,12,6" VerticalAlignment="Center" />
+      <CheckBox x:Name="IgnoreBlankLines" Content="忽略空行" Margin="0,0,12,6" VerticalAlignment="Center" />
+      <CheckBox x:Name="IgnoreTrailing" Content="忽略行尾空白" Margin="0,0,12,6" VerticalAlignment="Center" />
+      <CheckBox x:Name="IgnoreComments" Content="忽略注释行" Margin="0,0,12,6" VerticalAlignment="Center" />
+      <CheckBox x:Name="InlineDiff" Content="行内差异高亮" IsChecked="True" VerticalAlignment="Center" Margin="0,0,0,6"
+                Checked="Filter_Changed" Unchecked="Filter_Changed" />
+    </WrapPanel>
+
+    <!-- 输入区：文本模式左右两栏。 -->
+    <Grid x:Name="TextInputPanel" Grid.Row="2" Height="180" Margin="20,0,20,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <DockPanel>
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+          <TextBlock Text="左侧" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <TextBlock x:Name="LeftFileName" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <Button Style="{StaticResource IconButton}" Click="LoadLeft_Click" ToolTip="读取本地文本文件">
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconFile}" />
+            </Button>
+          </StackPanel>
+        </Grid>
+        <TextBox x:Name="LeftBox" Style="{StaticResource MonoBox}" AutomationProperties.Name="左侧内容" />
+      </DockPanel>
+      <GridSplitter Grid.Column="1" Width="12" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" />
+      <DockPanel Grid.Column="2">
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+          <TextBlock Text="右侧" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <TextBlock x:Name="RightFileName" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <Button Style="{StaticResource IconButton}" Click="LoadRight_Click" ToolTip="读取本地文本文件">
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconFile}" />
+            </Button>
+          </StackPanel>
+        </Grid>
+        <TextBox x:Name="RightBox" Style="{StaticResource MonoBox}" AutomationProperties.Name="右侧内容" />
+      </DockPanel>
+    </Grid>
+
+    <!-- 输入区：二进制模式。 -->
+    <Border x:Name="BinaryPanel" Grid.Row="2" Visibility="Collapsed" Style="{StaticResource Card}"
+            Background="{StaticResource SunkenBrush}" Margin="20,0,20,0" Padding="16">
+      <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+        <TextBlock Text="左侧文件" Style="{StaticResource FieldLabel}" Margin="0,0,10,10" />
+        <TextBox Grid.Column="1" x:Name="LeftPath" IsReadOnly="True" Margin="0,0,8,10" />
+        <Button Grid.Column="2" Content="选择" Click="PickLeftBinary_Click" Margin="0,0,0,10" Padding="12,6" />
+        <TextBlock Grid.Row="1" Text="右侧文件" Style="{StaticResource FieldLabel}" Margin="0,0,10,10" />
+        <TextBox Grid.Row="1" Grid.Column="1" x:Name="RightPath" IsReadOnly="True" Margin="0,0,8,10" />
+        <Button Grid.Row="1" Grid.Column="2" Content="选择" Click="PickRightBinary_Click" Margin="0,0,0,10" Padding="12,6" />
+        <TextBlock Grid.Row="2" Grid.ColumnSpan="3" Style="{StaticResource Caption}"
+                   Text="按字节逐位比较，只报告是否一致、首个不同位置和两侧大小；不解析文件内容。" />
+      </Grid>
+    </Border>
+
+    <!-- 输入区：目录模式。 -->
+    <Border x:Name="DirectoryPanel" Grid.Row="2" Visibility="Collapsed" Style="{StaticResource Card}"
+            Background="{StaticResource SunkenBrush}" Margin="20,0,20,0" Padding="16">
+      <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+        <TextBlock Text="左侧文件夹" Style="{StaticResource FieldLabel}" Margin="0,0,10,10" />
+        <TextBox Grid.Column="1" x:Name="LeftFolder" IsReadOnly="True" Margin="0,0,8,10" />
+        <Button Grid.Column="2" Content="选择" Click="PickLeftFolder_Click" Margin="0,0,0,10" Padding="12,6" />
+        <TextBlock Grid.Row="1" Text="右侧文件夹" Style="{StaticResource FieldLabel}" Margin="0,0,10,10" />
+        <TextBox Grid.Row="1" Grid.Column="1" x:Name="RightFolder" IsReadOnly="True" Margin="0,0,8,10" />
+        <Button Grid.Row="1" Grid.Column="2" Content="选择" Click="PickRightFolder_Click" Margin="0,0,0,10" Padding="12,6" />
+        <CheckBox Grid.Row="2" Grid.ColumnSpan="3" x:Name="CompareContent" Content="按内容摘要比较（不勾选时只比文件大小，速度更快）"
+                  VerticalAlignment="Top" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="3" Margin="20,14,20,8">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+      <TextBlock x:Name="SummaryText" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Text="尚未对比" />
+      <TextBlock x:Name="SimilarityText" Grid.Column="1" Style="{StaticResource Caption}" VerticalAlignment="Center" />
+    </Grid>
+
+    <Border Grid.Row="4" Style="{StaticResource Card}" Margin="20,0,20,0">
+      <Grid>
+        <DataGrid x:Name="DiffGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                  GridLinesVisibility="None" SelectionUnit="FullRow" CanUserAddRows="False" CanUserDeleteRows="False"
+                  CanUserResizeRows="False" EnableRowVirtualization="True" RowHeight="22" BorderThickness="0"
+                  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                  Background="{StaticResource SurfaceBrush}">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="左行" Binding="{Binding LeftNumber}" Width="58" ElementStyle="{StaticResource DiffNumberCell}" />
+            <DataGridTemplateColumn Header="左侧内容" Width="*">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <controls:InlineDiffText Style="{StaticResource DiffCell}" Segments="{Binding LeftSegments}"
+                                           HighlightBrush="{StaticResource DiffRemovedBrush}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="右行" Binding="{Binding RightNumber}" Width="58" ElementStyle="{StaticResource DiffNumberCell}" />
+            <DataGridTemplateColumn Header="右侧内容" Width="*">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <controls:InlineDiffText Style="{StaticResource DiffCell}" Segments="{Binding RightSegments}"
+                                           HighlightBrush="{StaticResource DiffAddedBrush}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+          <DataGrid.RowStyle>
+            <Style TargetType="DataGridRow">
+              <Setter Property="Background" Value="Transparent" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Kind}" Value="Added"><Setter Property="Background" Value="{StaticResource DiffAddedBrush}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Kind}" Value="Removed"><Setter Property="Background" Value="{StaticResource DiffRemovedBrush}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Kind}" Value="Changed"><Setter Property="Background" Value="{StaticResource DiffChangedBrush}" /></DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </DataGrid.RowStyle>
+        </DataGrid>
+
+        <DataGrid x:Name="DirectoryGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                  GridLinesVisibility="None" SelectionUnit="FullRow" CanUserAddRows="False" CanUserDeleteRows="False"
+                  CanUserResizeRows="False" EnableRowVirtualization="True" RowHeight="26" BorderThickness="0"
+                  Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                  Background="{StaticResource SurfaceBrush}">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="相对路径" Binding="{Binding RelativePath}" Width="*" />
+            <DataGridTextColumn Header="状态" Binding="{Binding StateName}" Width="90" />
+            <DataGridTextColumn Header="左侧大小" Binding="{Binding LeftText}" Width="100" />
+            <DataGridTextColumn Header="右侧大小" Binding="{Binding RightText}" Width="100" />
+          </DataGrid.Columns>
+          <DataGrid.RowStyle>
+            <Style TargetType="DataGridRow">
+              <Setter Property="Background" Value="Transparent" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding State}" Value="Modified"><Setter Property="Background" Value="{StaticResource DiffChangedBrush}" /></DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="LeftOnly"><Setter Property="Background" Value="{StaticResource DiffRemovedBrush}" /></DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="RightOnly"><Setter Property="Background" Value="{StaticResource DiffAddedBrush}" /></DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </DataGrid.RowStyle>
+        </DataGrid>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="5" Style="{StaticResource StatusBar}" Margin="0,14,0,0">
+      <Grid Margin="20,0" Height="48">
+        <TextBlock x:Name="StatusText" Style="{StaticResource StatusTextStyle}" TextWrapping="Wrap"
+                   Text="两侧内容只在本机内存中对比，不上传、不写日志。" />
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

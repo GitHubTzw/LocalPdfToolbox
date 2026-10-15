@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../CRTVUP.Unify.LocalPdf.Abstractions/CRTVUP.Unify.LocalPdf.Abstractions.csproj" />
+    <PackageReference Include="PdfPig" Version="0.1.9" />
+    <EmbeddedResource Include="Resources/blank.pptx" LogicalName="LocalPdf.blank.pptx" />
+  </ItemGroup>
+</Project>

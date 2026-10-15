@@ -1,0 +1,126 @@
+<UserControl x:Class="CRTVUP.Unify.LocalPdf.DesktopV2.Views.CompressTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <!-- 页头：标题与说明在左，文件操作在右。 -->
+    <Grid Grid.Row="0" Margin="20,16,20,12">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <StackPanel VerticalAlignment="Center">
+        <TextBlock Text="文件压缩" Style="{StaticResource PageHeader}" />
+        <TextBlock Text="把文件体积压小：PDF 重写结构、图片重新编码、Office 文档重新打包。输出为新文件，源文件不变。"
+                   Style="{StaticResource PageHint}" Margin="0,5,0,0" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+        <Button Content="添加文件" Click="AddFiles_Click" Margin="0,0,6,0" Padding="12,7" />
+        <Button Content="移除选中" Click="RemoveSelected_Click" Margin="0,0,6,0" Padding="12,7" />
+        <Button Content="清空列表" Click="ClearList_Click" Padding="12,7" />
+      </StackPanel>
+    </Grid>
+
+    <!-- 设置卡：压缩参数与输出位置集中在一处，主操作放在最右。 -->
+    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="20,0,20,12" Padding="14,12">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="压缩强度" Style="{StaticResource FieldLabel}" />
+        <ComboBox Grid.Column="1" x:Name="LevelChoice" Width="164" SelectedIndex="1" Margin="0,0,16,0"
+                  ToolTip="越往下体积越小，画质损失越明显">
+          <ComboBoxItem Content="轻度（质量 85）" />
+          <ComboBoxItem Content="标准（质量 70）" />
+          <ComboBoxItem Content="强力（质量 55 · 75%）" />
+          <ComboBoxItem Content="极限（质量 40 · 50%）" />
+        </ComboBox>
+        <CheckBox Grid.Column="2" x:Name="RasterizePdf" Content="PDF 转成图片版（体积最小，会丢失文字层）"
+                  VerticalAlignment="Center" Margin="0,0,16,0" />
+        <StackPanel Grid.Column="3" Orientation="Horizontal">
+          <Button Content="选择输出文件夹" Click="PickOutput_Click" Margin="0,0,6,0" Padding="12,7" />
+          <Button x:Name="CompressButton" Content="开始压缩" Click="Compress_Click" Padding="18,7"
+                  Style="{StaticResource PrimaryButton}" IsEnabled="False" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="2" Margin="20,0,20,0">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+      <Grid Margin="0,0,0,7">
+        <TextBlock Text="待压缩文件" Style="{StaticResource SectionTitle}" />
+        <TextBlock x:Name="OutputFolderBox" HorizontalAlignment="Right" Style="{StaticResource Caption}"
+                   TextTrimming="CharacterEllipsis" ToolTip="压缩结果保存到该文件夹，文件名自动加“-压缩”后缀" />
+      </Grid>
+      <Border Grid.Row="1" Style="{StaticResource Card}">
+      <Grid>
+        <DataGrid x:Name="ItemGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                  GridLinesVisibility="None" SelectionMode="Extended" SelectionUnit="FullRow"
+                  CanUserAddRows="False" CanUserDeleteRows="False" CanUserResizeRows="False" RowHeight="30"
+                  Background="Transparent" BorderThickness="0" HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="文件" Binding="{Binding FileName}" Width="*" />
+            <DataGridTextColumn Header="类型" Binding="{Binding KindLabel}" Width="110" />
+            <DataGridTextColumn Header="原始大小" Binding="{Binding OriginalText}" Width="100" />
+            <DataGridTextColumn Header="压缩后" Binding="{Binding ResultText}" Width="100" />
+            <DataGridTextColumn Header="变化" Binding="{Binding ChangeText}" Width="90" />
+            <DataGridTextColumn Header="状态" Binding="{Binding StatusText}" Width="200" />
+          </DataGrid.Columns>
+          <DataGrid.RowStyle>
+            <Style TargetType="DataGridRow">
+              <Setter Property="Background" Value="Transparent" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDone}" Value="True"><Setter Property="Background" Value="{StaticResource DiffAddedBrush}" /></DataTrigger>
+                <DataTrigger Binding="{Binding HasFailed}" Value="True"><Setter Property="Background" Value="{StaticResource DiffRemovedBrush}" /></DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </DataGrid.RowStyle>
+        </DataGrid>
+        <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="25" IsHitTestVisible="False">
+          <Path Style="{StaticResource IconPath}" Data="{StaticResource IconArchive}" Width="34" Height="34" Stroke="#9DB6A8"
+                HorizontalAlignment="Center" Margin="0,0,0,14" />
+          <TextBlock Text="还没有要压缩的文件" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock Text="支持 PDF、PNG/JPEG/BMP/TIFF 和 DOCX/XLSX/PPTX" Style="{StaticResource Caption}" Margin="0,8,0,0" HorizontalAlignment="Center" />
+        </StackPanel>
+      </Grid>
+      </Border>
+    </Grid>
+
+    <Expander Grid.Row="3" Header="打包与解压（ZIP / GZip）" Margin="20,12,20,0"
+              Foreground="{StaticResource MutedBrush}" FontSize="12">
+      <WrapPanel Margin="0,10,0,4">
+        <Button Content="打包为 ZIP" Click="CreateZip_Click" Margin="0,0,6,6" Padding="12,7" />
+        <Button Content="解压 ZIP…" Click="ExtractZip_Click" Margin="0,0,6,6" Padding="12,7" />
+        <Button Content="压缩为 GZip" Click="CompressGzip_Click" Margin="0,0,6,6" Padding="12,7" />
+        <Button Content="解压 GZip…" Click="ExtractGzip_Click" Margin="0,0,6,6" Padding="12,7" />
+        <Button Content="查看 ZIP 内容" Click="ListZip_Click" Margin="0,0,6,6" Padding="12,7" />
+      </WrapPanel>
+    </Expander>
+
+    <Border Grid.Row="4" Style="{StaticResource StatusBar}" Margin="0,14,0,0">
+      <Grid Margin="20,0" Height="56">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+        <StackPanel VerticalAlignment="Center">
+          <TextBlock x:Name="StatusText" Style="{StaticResource StatusTextStyle}"
+                     Text="所有压缩都在本机完成；输出只新建文件，不覆盖已有内容。" />
+          <ProgressBar x:Name="BusyProgress" IsIndeterminate="True" Height="3" Visibility="Collapsed" Margin="0,7,25,0" Foreground="{StaticResource AccentBrush}" />
+        </StackPanel>
+        <Button Grid.Column="1" x:Name="CancelButton" Content="取消" Click="Cancel_Click" Visibility="Collapsed" Margin="12,0" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

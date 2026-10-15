@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><PlatformTarget>x64</PlatformTarget></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/CRTVUP.Unify.LocalPdf.Implement/CRTVUP.Unify.LocalPdf.Implement.csproj" />
+    <Content Include="../../vendor/pdfium/pdfium.dll" Link="pdfium.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

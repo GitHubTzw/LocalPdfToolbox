@@ -1,0 +1,36 @@
+<Window x:Class="CRTVUP.Unify.LocalPdf.Desktop.TextContentEditorWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="本地文字编辑与转换" Width="980" Height="740" MinWidth="780" MinHeight="620"
+ Style="{StaticResource {x:Type Window}}" WindowStartupLocation="CenterOwner" Closing="Editor_Closing">
+ <Grid Margin="24">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel Margin="0,0,0,18">
+   <TextBlock Text="检查、编辑文字，再转换" FontSize="23" FontWeight="SemiBold"/>
+   <TextBlock x:Name="LimitationText" TextWrapping="Wrap" Foreground="#8A713C" LineHeight="20" Margin="0,10,0,0"/>
+   <TextBlock Text="这里编辑提取后的文字。图片、图表、表格布局和数字格式不保留；Excel 输出为每行一个文字单元格。" TextWrapping="Wrap" Foreground="#74867E" LineHeight="20"/>
+  </StackPanel>
+  <Grid Grid.Row="1" x:Name="EditingArea">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="156"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Grid Margin="0,0,16,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <TextBlock Text="文档分节" FontWeight="SemiBold" Margin="0,0,0,9"/>
+    <ListBox x:Name="SectionList" Grid.Row="1" BorderBrush="#DCE5E1" SelectionChanged="Section_Changed"/>
+   </Grid>
+   <Grid Grid.Column="1"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <TextBlock x:Name="SectionLabel" Text="编辑当前分节" FontWeight="SemiBold" Margin="0,0,0,9"/>
+    <TextBox x:Name="SectionText" Grid.Row="1" AcceptsReturn="True" AcceptsTab="True" TextWrapping="Wrap" VerticalContentAlignment="Top"
+     VerticalScrollBarVisibility="Auto" MaxLength="2000000" TextChanged="SectionText_Changed" AutomationProperties.Name="编辑提取的文字"/>
+   </Grid>
+  </Grid>
+  <Grid Grid.Row="2" Margin="0,18,0,0"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <TextBlock x:Name="EditorStatus" Text="文字仅保留在本次窗口中，所有导出均保存为新文件。" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,13"/>
+   <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <ComboBox x:Name="OutputFormat" Width="174" SelectedIndex="0" VerticalAlignment="Center" Padding="8">
+     <ComboBoxItem Content="TXT 纯文字"/><ComboBoxItem Content="Word 可编辑文字版"/><ComboBoxItem Content="Excel 文字行版"/>
+    </ComboBox>
+    <Button x:Name="ExportTextButton" Grid.Column="1" Content="另存文字新文件" Click="ExportText_Click" Margin="10,0,0,0"/>
+    <Button x:Name="CloseEditor" Grid.Column="3" Content="关闭" Click="CloseEditor_Click" Margin="10,0,8,0"/>
+    <Button x:Name="BuildPdfButton" Grid.Column="4" Content="生成 PDF 并加入工作区" Style="{StaticResource PrimaryButton}" Click="BuildPdf_Click"/>
+   </Grid>
+  </Grid>
+ </Grid>
+</Window>

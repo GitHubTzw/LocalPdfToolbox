@@ -1,0 +1,81 @@
+<Window x:Class="CRTVUP.Unify.LocalPdf.DesktopV2.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:CRTVUP.Unify.LocalPdf.DesktopV2.Views"
+        Title="本地工具箱 V2" Width="1320" Height="860" MinWidth="1120" MinHeight="720"
+        Style="{StaticResource {x:Type Window}}" WindowStartupLocation="CenterScreen"
+        AllowDrop="True" DragOver="Window_DragOver" Drop="Window_Drop" Closing="Window_Closing">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="58" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <!-- 顶部：品牌标识 + 离线声明。高度固定，避免切换页签时跳动。 -->
+    <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+      <Grid Margin="20,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Image Width="34" Height="34" Source="/LocalPdfV2;component/Assets/app-logo.png" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="本地工具箱" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" Margin="11,0,14,0" />
+        <TextBlock Grid.Column="2" Text="PDF 整理 · JSON / XML · 编码转换 · 文件对比 · 文件压缩"
+                   Style="{StaticResource PageHint}" VerticalAlignment="Center" />
+        <Border Grid.Column="3" Background="{StaticResource AccentSoftBrush}" CornerRadius="13" Padding="12,5" VerticalAlignment="Center">
+          <TextBlock Text="●  离线运行 · 纯本地处理" Foreground="{StaticResource AccentBrush}" FontSize="11.5" />
+        </Border>
+      </Grid>
+    </Border>
+
+    <TabControl Grid.Row="1" x:Name="Tabs">
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal">
+            <Path Style="{StaticResource TabIcon}" Data="{StaticResource IconFile}" />
+            <TextBlock Text="PDF 工作台" Margin="7,0,0,0" />
+          </StackPanel>
+        </TabItem.Header>
+        <views:PdfTab x:Name="PdfWorkspace" />
+      </TabItem>
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal">
+            <Path Style="{StaticResource TabIcon}" Data="{StaticResource IconBraces}" />
+            <TextBlock Text="JSON / XML" Margin="7,0,0,0" />
+          </StackPanel>
+        </TabItem.Header>
+        <views:JsonTab x:Name="JsonTools" />
+      </TabItem>
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal">
+            <Path Style="{StaticResource TabIcon}" Data="{StaticResource IconCode}" />
+            <TextBlock Text="编码转换" Margin="7,0,0,0" />
+          </StackPanel>
+        </TabItem.Header>
+        <views:EncodingTab x:Name="EncodingTools" />
+      </TabItem>
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal">
+            <Path Style="{StaticResource TabIcon}" Data="{StaticResource IconCompare}" />
+            <TextBlock Text="文件对比" Margin="7,0,0,0" />
+          </StackPanel>
+        </TabItem.Header>
+        <views:DiffTab x:Name="DiffTools" />
+      </TabItem>
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal">
+            <Path Style="{StaticResource TabIcon}" Data="{StaticResource IconArchive}" />
+            <TextBlock Text="文件压缩" Margin="7,0,0,0" />
+          </StackPanel>
+        </TabItem.Header>
+        <views:CompressTab x:Name="CompressTools" />
+      </TabItem>
+    </TabControl>
+  </Grid>
+</Window>

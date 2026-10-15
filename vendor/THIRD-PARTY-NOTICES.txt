@@ -1,0 +1,21 @@
+Third-party components bundled for offline use
+
+PdfPig 0.1.9
+Authors: UglyToad (as declared in the package metadata).
+License: Apache-2.0. Full license text: licenses/pdfpig/Apache-2.0.txt.
+Package copied unchanged from the existing local NuGet cache.
+SHA-256 (pdfpig.0.1.9.nupkg):
+00F0126BA87C4743FFFABAF313052B50B8B4991572D72AC19764FBF596140F5A
+
+PDFium 151.0.7920.0, Windows x64
+Build origin: pdfium-binaries; bundled with installed pypdfium2 5.11.0.
+Only the native PDFium library is used; the Python wrapper is not required.
+pdfium.dll was copied unchanged from the existing local installation.
+SHA-256 (pdfium.dll):
+0AA3ABB1AA20798094C1A5F2D8CDEA45B24A6E12CDC6C774DE261DD522DBDF81
+Full upstream and third-party notices are retained under:
+licenses/pdfium/data/windows_x64/BUILD_LICENSES/
+licenses/pdfium/LICENSES/
+
+No proprietary PDFgear libraries are used by this project.
+No component was downloaded while creating this project.
