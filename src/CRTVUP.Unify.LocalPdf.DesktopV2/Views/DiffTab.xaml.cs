@@ -307,6 +307,29 @@ public partial class DiffTab : UserControl
     private void LoadLeft_Click(object sender, RoutedEventArgs e) => LoadText(side: true);
     private void LoadRight_Click(object sender, RoutedEventArgs e) => LoadText(side: false);
 
+    /// <summary>从主窗口拖拽进来时调用：一个文件放左侧，两个文件左右各一个。</summary>
+    public void LoadFiles(IReadOnlyList<string> files)
+    {
+        if (files.Count == 0) return;
+        ModeChoice.SelectedIndex = 0;
+        var loaded = 0;
+        foreach (var file in files.Take(2))
+        {
+            try
+            {
+                var text = LocalTextFile.Read(file);
+                var name = System.IO.Path.GetFileName(file);
+                if (loaded == 0) { LeftBox.Text = text; LeftFileName.Text = name; }
+                else { RightBox.Text = text; RightFileName.Text = name; }
+                loaded++;
+            }
+            catch (PdfToolException error) { StatusText.Text = error.Message; return; }
+        }
+        StatusText.Text = loaded == 1
+            ? "已读取左侧文件；再拖一个文件进来即可对比。"
+            : "两侧都已读取，点“对比”开始逐行比较。";
+    }
+
     private void LoadText(bool side)
     {
         var dialog = new OpenFileDialog

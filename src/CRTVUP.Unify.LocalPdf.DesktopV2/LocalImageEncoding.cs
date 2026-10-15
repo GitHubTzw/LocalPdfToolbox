@@ -62,6 +62,28 @@ internal static class LocalImageEncoding
     }
 
     /// <summary>保存已经添加好帧的编码器，返回内存中的字节。</summary>
+    /// <summary>把 BGRA 字节里的透明像素合成到白底，返回新的 BGRA 字节（JPEG 不支持透明通道）。</summary>
+    public static byte[] FlattenPixels(ReadOnlySpan<byte> bgra, int width, int height)
+    {
+        var stride = checked(width * 4);
+        var pixels = new byte[checked(stride * height)];
+        bgra[..pixels.Length].CopyTo(pixels);
+        var opaque = true;
+        for (var index = 3; index < pixels.Length; index += 4)
+            if (pixels[index] != 255) { opaque = false; break; }
+        if (opaque) return pixels;
+        for (var index = 0; index < pixels.Length; index += 4)
+        {
+            var alpha = pixels[index + 3];
+            if (alpha == 255) continue;
+            for (var channel = 0; channel < 3; channel++)
+                pixels[index + channel] = (byte)((pixels[index + channel] * alpha + 255 * (255 - alpha) + 127) / 255);
+            pixels[index + 3] = 255;
+        }
+        return pixels;
+    }
+
+    /// <summary>保存已经添加好帧的编码器，返回内存中的字节。</summary>
     public static byte[] Save(BitmapEncoder encoder)
     {
         using var buffer = new MemoryStream();

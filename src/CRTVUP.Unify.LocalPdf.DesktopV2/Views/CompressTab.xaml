@@ -10,61 +10,67 @@
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <!-- 页头：标题与说明在左，文件操作在右。 -->
-    <Grid Grid.Row="0" Margin="20,16,20,12">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="Auto" />
-      </Grid.ColumnDefinitions>
-      <StackPanel VerticalAlignment="Center">
-        <TextBlock Text="文件压缩" Style="{StaticResource PageHeader}" />
-        <TextBlock Text="把文件体积压小：PDF 重写结构、图片重新编码、Office 文档重新打包。输出为新文件，源文件不变。"
-                   Style="{StaticResource PageHint}" Margin="0,5,0,0" />
-      </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-        <Button Content="添加文件" Click="AddFiles_Click" Margin="0,0,6,0" Padding="12,7" />
-        <Button Content="移除选中" Click="RemoveSelected_Click" Margin="0,0,6,0" Padding="12,7" />
-        <Button Content="清空列表" Click="ClearList_Click" Padding="12,7" />
-      </StackPanel>
-    </Grid>
-
-    <!-- 设置卡：压缩参数与输出位置集中在一处，主操作放在最右。 -->
-    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="20,0,20,12" Padding="14,12">
+    <!-- 操作条：左边加文件，右边主操作，位置固定不动。 -->
+    <Border Grid.Row="0" Style="{StaticResource ToolbarBar}">
       <Grid>
         <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Style="{StaticResource PrimaryButton}" Click="AddFiles_Click"
+                  ToolTip="添加要压缩的文件；也可以直接把文件拖进窗口">
+            <StackPanel Orientation="Horizontal">
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconPlus}" />
+              <TextBlock Text="添加文件" Margin="8,0,0,0" />
+            </StackPanel>
+          </Button>
+          <Button Style="{StaticResource GhostButton}" Content="移除选中" Click="RemoveSelected_Click" Margin="6,0,0,0" />
+          <Button Style="{StaticResource GhostButton}" Content="清空列表" Click="ClearList_Click" Margin="6,0,0,0" />
+        </StackPanel>
+        <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="14,0,14,0" Style="{StaticResource Caption}"
+                   TextTrimming="CharacterEllipsis"
+                   Text="支持 PDF、图片（PNG/JPEG/BMP/TIFF）和 Office 文档（DOCX/XLSX/PPTX）。" />
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Style="{StaticResource GhostButton}" Content="输出文件夹" Click="PickOutput_Click"
+                  ToolTip="选择压缩结果的保存位置，文件名自动加「-压缩」后缀" />
+          <Button x:Name="CompressButton" Style="{StaticResource PrimaryButton}" Click="Compress_Click" Margin="8,0,0,0"
+                  IsEnabled="False" ToolTip="按上面的强度压缩列表里的文件，只新建文件，不覆盖原件">
+            <StackPanel Orientation="Horizontal">
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconArchive}" />
+              <TextBlock Text="开始压缩" Margin="8,0,0,0" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- 参数条：压缩强度、PDF 图片化开关和当前输出位置集中在一行。 -->
+    <Border Grid.Row="1" Style="{StaticResource NoticeCard}" Margin="24,14,24,12">
+      <WrapPanel>
         <TextBlock Text="压缩强度" Style="{StaticResource FieldLabel}" />
-        <ComboBox Grid.Column="1" x:Name="LevelChoice" Width="164" SelectedIndex="1" Margin="0,0,16,0"
+        <ComboBox x:Name="LevelChoice" Width="164" SelectedIndex="1" Margin="0,0,16,0"
                   ToolTip="越往下体积越小，画质损失越明显">
           <ComboBoxItem Content="轻度（质量 85）" />
           <ComboBoxItem Content="标准（质量 70）" />
           <ComboBoxItem Content="强力（质量 55 · 75%）" />
           <ComboBoxItem Content="极限（质量 40 · 50%）" />
         </ComboBox>
-        <CheckBox Grid.Column="2" x:Name="RasterizePdf" Content="PDF 转成图片版（体积最小，会丢失文字层）"
+        <CheckBox x:Name="RasterizePdf" Content="PDF 转成图片版（体积最小，会丢失文字层）"
                   VerticalAlignment="Center" Margin="0,0,16,0" />
-        <StackPanel Grid.Column="3" Orientation="Horizontal">
-          <Button Content="选择输出文件夹" Click="PickOutput_Click" Margin="0,0,6,0" Padding="12,7" />
-          <Button x:Name="CompressButton" Content="开始压缩" Click="Compress_Click" Padding="18,7"
-                  Style="{StaticResource PrimaryButton}" IsEnabled="False" />
-        </StackPanel>
-      </Grid>
+        <TextBlock x:Name="OutputFolderBox" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" MaxWidth="420"
+                   ToolTip="压缩结果保存到该文件夹，文件名自动加「-压缩」后缀" />
+      </WrapPanel>
     </Border>
 
-    <Grid Grid.Row="2" Margin="20,0,20,0">
+    <Grid Grid.Row="2" Margin="24,0,24,0">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
-      <Grid Margin="0,0,0,7">
-        <TextBlock Text="待压缩文件" Style="{StaticResource SectionTitle}" />
-        <TextBlock x:Name="OutputFolderBox" HorizontalAlignment="Right" Style="{StaticResource Caption}"
-                   TextTrimming="CharacterEllipsis" ToolTip="压缩结果保存到该文件夹，文件名自动加“-压缩”后缀" />
-      </Grid>
+      <TextBlock Text="待压缩文件" Style="{StaticResource SectionTitle}" Margin="0,0,0,7" />
       <Border Grid.Row="1" Style="{StaticResource Card}">
       <Grid>
         <DataGrid x:Name="ItemGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"

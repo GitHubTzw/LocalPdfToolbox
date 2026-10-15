@@ -125,9 +125,15 @@ internal static class Program
                             Text = "OFFLINE", FontSize = textObject.FontSize, Font = PdfTextFont.Arial
                         });
                         Check(!SamePixels(initialImage, (BitmapSource)preview.Source), "PDF 内容编辑更新本地预览");
-                        ((ListBox)contentEditor.FindName("ObjectList")).SelectedIndex = textObject.Index;
-                        LayoutElement(contentEditor, new Size(1220, 840));
-                        SaveElement(contentEditor, Path.Combine(outputDirectory, "界面-PDF内容编辑.png"), 1220, 840);
+                        // 编辑器改成“直接在页面上点选”，不再有对象列表；这里直接调用选中方法。
+                        var refreshed = originalDocument.EnumerateObjects(1, 0).Objects
+                            .First(item => item.Kind == PdfObjectKind.Text && item.CanEdit);
+                        typeof(ContentEditorWindow).GetMethod("SelectObject", BindingFlags.NonPublic | BindingFlags.Instance)!
+                            .Invoke(contentEditor, [refreshed]);
+                        Check(((TextBlock)contentEditor.FindName("ObjectHint")).Text.Contains("已选中", StringComparison.Ordinal),
+                            "PDF 编辑器可直接选中页面对象");
+                        LayoutElement(contentEditor, new Size(1380, 900));
+                        SaveElement(contentEditor, Path.Combine(outputDirectory, "界面-PDF内容编辑.png"), 1380, 900);
                         CallWindowEvent(contentEditor, "Highlight_Click");
                         CallWindowEvent(contentEditor, "SelectMode_Click");
                         Check(((TextBlock)contentEditor.FindName("ModeHint")).Text.StartsWith("选择对象", StringComparison.Ordinal), "绘制模式可退回对象选择");

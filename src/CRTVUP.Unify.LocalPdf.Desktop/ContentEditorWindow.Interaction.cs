@@ -21,6 +21,17 @@ public partial class ContentEditorWindow
         SelectionLayer.Children.Clear();
         if (mode != EditMode.InsertImage) ClearPendingImage();
         SelectionLayer.Cursor = mode == EditMode.Select ? Cursors.Arrow : Cursors.Cross;
+        // 让顶部工具组跟随当前模式；已经是该模式时不会重复触发 Checked。
+        var toggle = mode switch
+        {
+            EditMode.InsertText => ToolText,
+            EditMode.InsertImage => ToolImage,
+            EditMode.Highlight => ToolHighlight,
+            EditMode.Rectangle => ToolRect,
+            _ => ToolSelect
+        };
+        if (toggle is not null && toggle.IsChecked != true) toggle.IsChecked = true;
+        if (mode == EditMode.Select && SelectedObject is { } item) DrawSelection(item.PreviewBounds);
         ModeHint.Text = mode switch
         {
             EditMode.InsertText => "插入文字：在页面中单击文字起点（第一行基线）。",
@@ -50,9 +61,7 @@ public partial class ContentEditorWindow
                 x >= item.PreviewBounds.Left && x <= item.PreviewBounds.Left + item.PreviewBounds.Width &&
                 y >= item.PreviewBounds.Top && y <= item.PreviewBounds.Top + item.PreviewBounds.Height)
                 .OrderBy(item => item.PreviewBounds.Width * item.PreviewBounds.Height).ThenByDescending(item => item.Index).FirstOrDefault();
-            ObjectList.SelectedItem = ObjectList.Items.Cast<ObjectRow>().FirstOrDefault(row => row.Item == item);
-            if (ObjectList.SelectedItem is not null) ObjectList.ScrollIntoView(ObjectList.SelectedItem);
-            else SelectionLayer.Children.Clear();
+            SelectObject(item);
             return;
         }
         if (_mode == EditMode.InsertText)

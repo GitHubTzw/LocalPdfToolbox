@@ -115,9 +115,15 @@ public partial class CompressTab : UserControl
             DereferenceLinks = false
         };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+        AddFiles(dialog.FileNames);
+    }
+
+    /// <summary>把一批本地文件加入待压缩列表；不是可压缩类型的会被跳过并统计。</summary>
+    public void AddFiles(IReadOnlyList<string> files)
+    {
         var added = 0;
         var rejected = 0;
-        foreach (var path in dialog.FileNames)
+        foreach (var path in files)
         {
             try
             {
@@ -197,12 +203,12 @@ public partial class CompressTab : UserControl
                     var progress = new Progress<string>(message => StatusText.Text = message);
                     var source = item.FullPath;
                     var result = await Task.Run(() => _compressor.Compress(source, target, options, progress, token), token);
-                    item.ResultText = FileSizeFormatter.Format(result.CompressedBytes);
-                    item.ChangeText = result.SavedPercent > 0 ? $"减少 {result.SavedPercent:0.#}%" : $"增加 {-result.SavedPercent:0.#}%";
-                    item.StatusText = result.SavedPercent > 0 ? "已完成" : "未变小，建议保留原文件";
-                    item.IsDone = result.SavedPercent > 0;
+                    item.ResultText = result.WroteOutput ? FileSizeFormatter.Format(result.CompressedBytes) : "—";
+                    item.ChangeText = result.WroteOutput ? $"减少 {result.SavedPercent:0.#}%" : "未变小";
+                    item.StatusText = result.WroteOutput ? "已完成" : "未变小，已保留原文件";
+                    item.IsDone = result.WroteOutput;
                     before += result.OriginalBytes;
-                    after += result.CompressedBytes;
+                    after += result.WroteOutput ? result.CompressedBytes : result.OriginalBytes;
                     done++;
                 }
                 catch (OperationCanceledException) { item.StatusText = "已取消"; break; }

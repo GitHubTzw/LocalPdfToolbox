@@ -29,6 +29,12 @@ public sealed record CompressResult(string OutputPath, long OriginalBytes, long 
 {
     /// <summary>体积变化百分比；正数表示变小，负数表示反而变大。</summary>
     public double SavedPercent => OriginalBytes <= 0 ? 0 : (OriginalBytes - CompressedBytes) * 100d / OriginalBytes;
+
+    /// <summary>
+    /// 为 false 表示这次没有生成新文件：重新编码的结果不会比原文件更小，
+    /// 已放弃写入，OutputPath 为空字符串，源文件保持原样。
+    /// </summary>
+    public bool WroteOutput { get; init; } = true;
 }
 
 /// <summary>把一类本地文件的体积压小；实现各自处理，不访问网络。</summary>

@@ -161,10 +161,19 @@ public partial class JsonTab : UserControl
             DereferenceLinks = false
         };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+        LoadFiles([dialog.FileName]);
+    }
+
+    /// <summary>从主窗口拖拽进来时调用：读取第一个文本文件到输入框。</summary>
+    public void LoadFiles(IReadOnlyList<string> files)
+    {
+        if (files.Count == 0) return;
         try
         {
-            InputBox.Text = LocalTextFile.Read(dialog.FileName);
-            StatusText.Text = "已读取本地文本；内容只在本次窗口中显示。";
+            InputBox.Text = LocalTextFile.Read(files[0]);
+            StatusText.Text = files.Count > 1
+                ? $"已读取 {System.IO.Path.GetFileName(files[0])}；一次只处理一个文本，其余文件已忽略。"
+                : "已读取本地文本；内容只在本次窗口中显示。";
         }
         catch (PdfToolException error) { StatusText.Text = error.Message; }
     }

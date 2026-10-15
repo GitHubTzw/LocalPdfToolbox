@@ -176,6 +176,16 @@ public partial class PdfTab : UserControl
         StatusText.Text = "本次会话已清空，请添加新的 PDF。";
     }
 
+    /// <summary>把「更多工具」按钮上的菜单展开到按钮正下方，位置始终跟着按钮走。</summary>
+    private void MoreTools_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { ContextMenu: { } menu } button) return;
+        menu.PlacementTarget = button;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.HorizontalOffset = -6;
+        menu.IsOpen = true;
+    }
+
     private void RemoveSource_Click(object sender, RoutedEventArgs e)
     {
         if (_busy || sender is not Button { Tag: string id }) return;
@@ -653,9 +663,19 @@ public partial class PdfTab : UserControl
 
     // ---------------------------------------------------------------- PDF 工具
 
-    /// <summary>当前操作的文档：优先用列表里选中的那个，只有一个文档时直接用它。</summary>
-    private SourceItem? SelectedSource() =>
-        SourceList.SelectedItem as SourceItem ?? (Sources.Count == 1 ? Sources[0] : null);
+    /// <summary>
+    /// 当前操作的文档：优先用选中页面所属的那一份，其次只有一个文档时直接用它。
+    /// 导入多份又没选页面时返回 null，由调用方提示先选一页。
+    /// </summary>
+    private SourceItem? SelectedSource()
+    {
+        if (PageList.SelectedItem is PageItemV2 page)
+        {
+            var match = Sources.FirstOrDefault(item => item.Id == page.SourceId);
+            if (match is not null) return match;
+        }
+        return Sources.Count == 1 ? Sources[0] : null;
+    }
 
     private void Info_Click(object sender, RoutedEventArgs e)
     {

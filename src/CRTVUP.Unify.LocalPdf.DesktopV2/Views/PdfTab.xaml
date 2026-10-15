@@ -4,134 +4,180 @@
              AllowDrop="True" DragOver="Tab_DragOver" Drop="Tab_Drop">
   <Grid>
     <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
-    <Grid x:Name="WorkspaceArea">
+
+    <!-- ============================================ 操作条：左=文件操作，中=页面操作，右=主操作（位置固定不变） -->
+    <Border Grid.Row="0" Style="{StaticResource ToolbarBar}">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <!-- 文件级操作：加文件、改内容 -->
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Style="{StaticResource PrimaryButton}" Click="AddFiles_Click"
+                  ToolTip="添加 PDF；也可以直接把文件拖进窗口">
+            <StackPanel Orientation="Horizontal">
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconPlus}" />
+              <TextBlock Text="添加 PDF" Margin="8,0,0,0" />
+            </StackPanel>
+          </Button>
+          <Button x:Name="EditButton" Style="{StaticResource GhostButton}" Click="EditContent_Click" Margin="6,0,0,0"
+                  IsEnabled="False" ToolTip="选中一页后编辑其中的文字、图片或标记；也可以直接双击页面">
+            <StackPanel Orientation="Horizontal">
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconEdit}" />
+              <TextBlock Text="编辑内容" Margin="7,0,0,0" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+        <!-- 页面操作：选中、旋转、复制、删除、撤销、按页码选择 -->
+        <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,6,0">
+          <Border x:Name="PageGroupSeparator" Style="{StaticResource ToolbarSeparator}" />
+          <Button Style="{StaticResource GhostButton}" Click="SelectAll_Click" ToolTip="全选或反选全部页面（Ctrl+A）">
+            <StackPanel Orientation="Horizontal">
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconSelectAll}" />
+              <TextBlock Text="全选" Margin="7,0,0,0" />
+            </StackPanel>
+          </Button>
+          <Button Style="{StaticResource ToolbarIconButton}" Click="RotateLeft_Click" Margin="4,0,0,0"
+                  ToolTip="所选页面逆时针旋转 90°">
+            <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconRotateLeft}" />
+          </Button>
+          <Button Style="{StaticResource ToolbarIconButton}" Click="RotateRight_Click" Margin="4,0,0,0"
+                  ToolTip="所选页面顺时针旋转 90°">
+            <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconRotateRight}" />
+          </Button>
+          <Button Style="{StaticResource ToolbarIconButton}" Click="Duplicate_Click" Margin="4,0,0,0"
+                  ToolTip="复制所选页面（副本紧跟原页）">
+            <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconCopy}" />
+          </Button>
+          <Button Style="{StaticResource ToolbarIconButton}" Click="Delete_Click" Margin="4,0,0,0"
+                  Foreground="{StaticResource DangerBrush}" ToolTip="从输出列表移除所选页面（Delete 键）">
+            <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconTrash}" />
+          </Button>
+          <Button x:Name="UndoButton" Style="{StaticResource ToolbarIconButton}" Click="Undo_Click" Margin="4,0,0,0"
+                  IsEnabled="False" ToolTip="撤销上一次页面调整（Ctrl+Z）">
+            <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconUndo}" />
+          </Button>
+
+          <Border Style="{StaticResource ToolbarSeparator}" />
+          <TextBox x:Name="PageRangeBox" Width="118" Margin="0,0,6,0" VerticalContentAlignment="Center"
+                   ToolTip="按当前输出页序选择，例如 1-3,5；页码从 1 开始"
+                   KeyDown="PageRange_KeyDown" AutomationProperties.Name="选择页码" />
+          <Button Style="{StaticResource GhostButton}" Content="选中" Click="SelectRange_Click"
+                  ToolTip="按左边填写的页码选中页面，回车也可以" />
+          <Button Style="{StaticResource GhostButton}" Content="仅保留" Click="KeepSelected_Click" Margin="6,0,0,0"
+                  ToolTip="把未选中的页面从输出列表移除，原文件不受影响" />
+        </WrapPanel>
+
+        <!-- 主操作：位置固定，永远在右上角，不会跟着内容跑 -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button x:Name="MoreToolsButton" Style="{StaticResource GhostButton}" Click="MoreTools_Click"
+                  ToolTip="格式转换、文档信息、提取文字、拆分 PDF 与清空">
+            <StackPanel Orientation="Horizontal">
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconMore}" />
+              <TextBlock Text="更多工具" Margin="7,0,0,0" />
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconChevronDown}" Margin="6,1,0,0" />
+            </StackPanel>
+            <Button.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="格式转换（图片 / 文字 / Office）" Click="Convert_Click">
+                  <MenuItem.Icon><Path Style="{StaticResource MenuIcon}" Data="{StaticResource IconSwap}" /></MenuItem.Icon>
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="查看文档信息" Click="Info_Click">
+                  <MenuItem.Icon><Path Style="{StaticResource MenuIcon}" Data="{StaticResource IconInfo}" /></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="提取文字层" Click="ExtractText_Click">
+                  <MenuItem.Icon><Path Style="{StaticResource MenuIcon}" Data="{StaticResource IconText}" /></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="拆分 PDF" Click="Split_Click">
+                  <MenuItem.Icon><Path Style="{StaticResource MenuIcon}" Data="{StaticResource IconSplit}" /></MenuItem.Icon>
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="清空工作区" Click="Clear_Click">
+                  <MenuItem.Icon><Path Style="{StaticResource MenuIcon}" Data="{StaticResource IconTrash}" /></MenuItem.Icon>
+                </MenuItem>
+              </ContextMenu>
+            </Button.ContextMenu>
+          </Button>
+          <Button x:Name="ExportButton" Style="{StaticResource PrimaryButton}" Click="Export_Click" Margin="8,0,0,0"
+                  IsEnabled="False" ToolTip="把当前页面顺序导出成一个新的 PDF，不覆盖原文件">
+            <StackPanel Orientation="Horizontal">
+              <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconExport}" />
+              <TextBlock Text="导出新 PDF" Margin="8,0,0,0" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- ============================================ 主体：左页面列表 / 右预览 -->
+    <Grid x:Name="WorkspaceArea" Grid.Row="1" Margin="24,18,24,16">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="272" />
         <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="322" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="440" />
       </Grid.ColumnDefinitions>
 
-      <!-- 文档来源 -->
-      <Border Background="{StaticResource SunkenBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
-        <Grid Margin="18,18,18,16">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-          </Grid.RowDefinitions>
-          <StackPanel>
-            <TextBlock Text="文档来源" Style="{StaticResource SectionTitle}" />
-            <TextBlock Text="可添加多个 PDF，也可以把文件直接拖进窗口。" Style="{StaticResource Caption}" Margin="0,6,0,14" />
-          </StackPanel>
-          <StackPanel Grid.Row="1" Margin="0,0,0,14">
-            <Button Style="{StaticResource PrimaryButton}" Click="AddFiles_Click" Margin="0,0,0,8" Padding="12,10">
-              <StackPanel Orientation="Horizontal">
-                <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconPlus}" />
-                <TextBlock Text="添加 PDF" Margin="8,0,0,0" />
-              </StackPanel>
-            </Button>
-            <Button Click="Convert_Click" Padding="12,9" ToolTip="PDF 导出为图片、文字或 Office；图片和 Office 文字转 PDF">
-              <StackPanel Orientation="Horizontal">
-                <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconSwap}" />
-                <TextBlock Text="格式转换" Margin="8,0,0,0" />
-              </StackPanel>
-            </Button>
-          </StackPanel>
-          <ListBox Grid.Row="2" x:Name="SourceList" ItemsSource="{Binding Sources}" BorderThickness="0" Background="Transparent"
-                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-            <ListBox.ItemContainerStyle>
-              <Style TargetType="ListBoxItem">
-                <Setter Property="Padding" Value="0" />
-                <Setter Property="Margin" Value="0,0,0,7" />
-                <Setter Property="Template">
-                  <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem"><ContentPresenter /></ControlTemplate>
-                  </Setter.Value>
-                </Setter>
-              </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <Border Padding="11" CornerRadius="8" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-                  <Grid>
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                    <StackPanel>
-                      <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FileName}" FontWeight="SemiBold" FontSize="12" />
-                      <TextBlock Text="{Binding Description}" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,5,0,0" />
-                    </StackPanel>
-                    <Button Grid.Column="1" Style="{StaticResource IconButton}" Click="RemoveSource_Click" Tag="{Binding Id}"
-                            ToolTip="移除此文档及对应页面" VerticalAlignment="Top">
-                      <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconClose}" Width="13" Height="13" />
-                    </Button>
-                  </Grid>
-                </Border>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
-          <StackPanel Grid.Row="3">
-            <TextBlock Text="PDF 工具" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
-            <UniformGrid Columns="2" Margin="0,0,0,6">
-              <Button Content="文档信息" Click="Info_Click" Margin="0,0,4,0" Padding="8,7" ToolTip="查看页数、每页尺寸和文件大小" />
-              <Button Content="提取文字" Click="ExtractText_Click" Margin="4,0,0,0" Padding="8,7" ToolTip="把文字层导出为新的本地文本文件" />
-            </UniformGrid>
-            <Button Content="拆分 PDF…" Click="Split_Click" Margin="0,0,0,10" Padding="8,7"
-                    ToolTip="按每 N 页或按页码范围拆成多个新文件" />
-            <Button Content="清空工作区" Click="Clear_Click" Margin="0,0,0,10" FontSize="12" />
-            <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="8" Padding="11">
-              <TextBlock Style="{StaticResource Caption}" LineHeight="19"
-                         Text="文件只在本机处理，不上传、不写使用历史。导出只新建文件，不覆盖原文件。" />
-            </Border>
-          </StackPanel>
-        </Grid>
-      </Border>
-
-      <!-- 页面整理 -->
-      <Grid Grid.Column="1" Margin="18,18,18,16">
+      <!-- 页面列表 -->
+      <Grid>
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
           <RowDefinition Height="*" />
-          <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid Margin="0,0,0,12">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-          <TextBlock Text="页面整理" FontSize="16" FontWeight="SemiBold" />
-          <TextBlock x:Name="PageSummary" Grid.Column="1" Style="{StaticResource Caption}" VerticalAlignment="Center" Text="0 页" />
+
+        <!-- 已导入的文档：横向排列的小卡片，点右侧叉号可整份移除 -->
+        <ItemsControl x:Name="SourceStrip" ItemsSource="{Binding Sources}" Margin="0,0,0,12">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Margin="0,0,8,8" Padding="10,7" CornerRadius="8" Background="{StaticResource SurfaceBrush}"
+                      BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                <StackPanel Orientation="Horizontal">
+                  <Path Width="14" Height="14" Stretch="Uniform" Fill="{StaticResource AccentBrush}"
+                        Data="{StaticResource IconFile}" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding FileName}" FontSize="12" Margin="8,0,8,0" VerticalAlignment="Center"
+                             MaxWidth="220" TextTrimming="CharacterEllipsis" ToolTip="{Binding Description}" />
+                  <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{StaticResource MutedBrush}"
+                             VerticalAlignment="Center" Margin="0,0,8,0" />
+                  <Button Style="{StaticResource IconButton}" Width="22" Height="22" Click="RemoveSource_Click"
+                          Tag="{Binding Id}" ToolTip="移除此文档及对应页面">
+                    <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconClose}" Width="11" Height="11" />
+                  </Button>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="页面顺序" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <TextBlock x:Name="PageSummary" Style="{StaticResource Caption}" Margin="12,0,0,0" VerticalAlignment="Center"
+                       Text="0 页" />
+          </StackPanel>
+          <TextBlock Grid.Column="1" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                     Text="按住页面拖动可排序 · 双击页面直接改内容" />
         </Grid>
-        <WrapPanel Grid.Row="1" Margin="0,0,0,10">
-          <Button Content="全选 / 反选" Click="SelectAll_Click" Padding="10,7" Margin="0,0,6,6" />
-          <Button x:Name="EditButton" Content="编辑内容" Click="EditContent_Click" Padding="10,7" Margin="0,0,6,6"
-                  Foreground="{StaticResource AccentBrush}" IsEnabled="False"
-                  ToolTip="选中一页后编辑其中的文字、图片或标记；也可以直接双击页面" />
-          <Button Style="{StaticResource IconButton}" Click="RotateLeft_Click" Margin="0,0,6,6" Padding="7,6" ToolTip="所选页面逆时针旋转 90°">
-            <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconRotateLeft}" />
-          </Button>
-          <Button Style="{StaticResource IconButton}" Click="RotateRight_Click" Margin="0,0,6,6" Padding="7,6" ToolTip="所选页面顺时针旋转 90°">
-            <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconRotateRight}" />
-          </Button>
-          <Button Style="{StaticResource IconButton}" Click="Duplicate_Click" Margin="0,0,6,6" Padding="7,6" ToolTip="复制所选页面（副本紧跟原页）">
-            <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconCopy}" />
-          </Button>
-          <Button Style="{StaticResource IconButton}" Click="Delete_Click" Margin="0,0,6,6" Padding="7,6" Foreground="{StaticResource DangerBrush}" ToolTip="从输出列表移除所选页面">
-            <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconTrash}" />
-          </Button>
-          <Button x:Name="UndoButton" Content="撤销" Click="Undo_Click" Padding="10,7" Margin="0,0,6,6" IsEnabled="False" />
-        </WrapPanel>
-        <Grid Grid.Row="2" Margin="0,0,0,12">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-          <TextBox x:Name="PageRangeBox" ToolTip="按当前输出页序选择，例如 1-3,5；页码从 1 开始" KeyDown="PageRange_KeyDown" AutomationProperties.Name="选择页码" />
-          <Button Grid.Column="1" Content="按页码选中" Click="SelectRange_Click" Margin="7,0,0,0" Padding="10,6" />
-          <Button Grid.Column="2" Content="仅保留选中" Click="KeepSelected_Click" Margin="7,0,0,0" Padding="10,6" />
-        </Grid>
-        <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="10">
+
+        <Border Grid.Row="2" Style="{StaticResource Card}" Background="{StaticResource SurfaceBrush}">
           <Grid>
             <ListBox x:Name="PageList" ItemsSource="{Binding Pages}" Background="Transparent" BorderThickness="0"
-                     SelectionMode="Extended" SelectionChanged="PageList_SelectionChanged" Padding="6"
+                     SelectionMode="Extended" SelectionChanged="PageList_SelectionChanged" Padding="8"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
                      VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                      HorizontalContentAlignment="Stretch"
@@ -141,8 +187,8 @@
                      DragOver="PageList_DragOver" Drop="PageList_Drop">
               <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
-                  <Setter Property="Padding" Value="9,7" />
-                  <Setter Property="Margin" Value="0,0,0,3" />
+                  <Setter Property="Padding" Value="10,8" />
+                  <Setter Property="Margin" Value="0,0,0,4" />
                   <Setter Property="Background" Value="Transparent" />
                   <Setter Property="BorderBrush" Value="Transparent" />
                   <Setter Property="BorderThickness" Value="1" />
@@ -150,14 +196,16 @@
                     <Setter.Value>
                       <ControlTemplate TargetType="ListBoxItem">
                         <Border x:Name="Row" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="7">
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="9">
                           <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
-                          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="#F2F7F4" /></Trigger>
+                          <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Row" Property="Background" Value="{StaticResource RowHoverBrush}" />
+                          </Trigger>
                           <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Row" Property="Background" Value="{StaticResource AccentSoftBrush}" />
-                            <Setter TargetName="Row" Property="BorderBrush" Value="#A7CFBB" />
+                            <Setter TargetName="Row" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
                           </Trigger>
                         </ControlTemplate.Triggers>
                       </ControlTemplate>
@@ -167,31 +215,34 @@
               </ListBox.ItemContainerStyle>
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Grid MinHeight="62" Loaded="PageRow_Loaded" Unloaded="PageRow_Unloaded">
+                  <Grid MinHeight="88" Loaded="PageRow_Loaded" Unloaded="PageRow_Unloaded">
                     <Grid.ColumnDefinitions>
                       <ColumnDefinition Width="Auto" />
                       <ColumnDefinition Width="Auto" />
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <CheckBox VerticalAlignment="Center" Margin="0,0,10,0" Focusable="False" ToolTip="选择此页"
+                    <CheckBox VerticalAlignment="Center" Margin="0,0,12,0" Focusable="False" ToolTip="选择此页"
                               IsChecked="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}, Mode=TwoWay}" />
-                    <Border Grid.Column="1" Width="46" Height="60" CornerRadius="4" Background="{StaticResource SunkenBrush}"
-                            BorderBrush="#CDDBD2" BorderThickness="1" Margin="0,0,12,0">
+                    <Border Grid.Column="1" Width="64" Height="84" CornerRadius="6" Background="{StaticResource SunkenBrush}"
+                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,14,0">
                       <Grid>
-                        <TextBlock Text="{Binding Position}" Foreground="#85A590" FontWeight="SemiBold" FontSize="13"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Position}" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold"
+                                   FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         <Image Source="{Binding Thumbnail}" Stretch="Uniform" SnapsToDevicePixels="True" />
                       </Grid>
                     </Border>
                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding FileName}" FontSize="12.5" TextTrimming="CharacterEllipsis" ToolTip="{Binding FileName}" />
-                      <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                        <TextBlock Text="{Binding OriginalPageLabel}" Foreground="{StaticResource MutedBrush}" FontSize="11" />
-                        <TextBlock Text="{Binding RotationLabel}" Foreground="#52745F" FontSize="11" Margin="8,0,0,0" />
+                      <TextBlock Text="{Binding FileName}" FontSize="13" TextTrimming="CharacterEllipsis"
+                                 ToolTip="{Binding FileName}" />
+                      <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <TextBlock Text="{Binding OriginalPageLabel}" Foreground="{StaticResource MutedBrush}" FontSize="11.5" />
+                        <TextBlock Text="{Binding RotationLabel}" Foreground="{StaticResource AccentBrush}" FontSize="11.5"
+                                   Margin="10,0,0,0" />
                       </StackPanel>
                     </StackPanel>
-                    <StackPanel Grid.Column="3" x:Name="RowActions" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                    <StackPanel Grid.Column="3" x:Name="RowActions" Orientation="Horizontal" VerticalAlignment="Center"
+                                Visibility="Collapsed">
                       <Button Style="{StaticResource IconButton}" Tag="{Binding}" Click="RowMoveUp_Click" ToolTip="上移一页">
                         <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconUp}" Width="14" Height="14" />
                       </Button>
@@ -207,7 +258,8 @@
                       <Button Style="{StaticResource IconButton}" Tag="{Binding}" Click="RowDuplicate_Click" ToolTip="复制此页">
                         <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconCopy}" Width="14" Height="14" />
                       </Button>
-                      <Button Style="{StaticResource IconButton}" Tag="{Binding}" Click="RowDelete_Click" Foreground="{StaticResource DangerBrush}" ToolTip="删除此页">
+                      <Button Style="{StaticResource IconButton}" Tag="{Binding}" Click="RowDelete_Click"
+                              Foreground="{StaticResource DangerBrush}" ToolTip="删除此页">
                         <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconTrash}" Width="14" Height="14" />
                       </Button>
                     </StackPanel>
@@ -223,63 +275,68 @@
                 </DataTemplate>
               </ListBox.ItemTemplate>
             </ListBox>
-            <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="25" IsHitTestVisible="False">
-              <Border Width="66" Height="80" CornerRadius="8" BorderBrush="#C4D7CA" BorderThickness="2" Background="{StaticResource SunkenBrush}"
-                      HorizontalAlignment="Center" Margin="0,0,0,18">
-                <TextBlock Text="＋" Foreground="#85A590" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center" />
-              </Border>
-              <TextBlock Text="把需要整理的 PDF 放到这里" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" />
-              <TextBlock Text="拖动页面即可调整顺序；双击页面直接编辑内容" Style="{StaticResource Caption}" Margin="0,9,0,0" HorizontalAlignment="Center" />
-            </StackPanel>
+
+            <!-- 空状态：整块可拖入，说明下一步做什么 -->
+            <Border x:Name="EmptyState" Style="{StaticResource DropZone}" Margin="14" IsHitTestVisible="False">
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="30">
+                <Border Width="72" Height="72" CornerRadius="18" Background="{StaticResource AccentSoftBrush}"
+                        HorizontalAlignment="Center">
+                  <Path Width="30" Height="30" Stretch="Uniform" Fill="{StaticResource AccentBrush}"
+                        Data="{StaticResource IconPlus}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <TextBlock Text="把 PDF 拖到这里" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"
+                           Margin="0,20,0,0" />
+                <TextBlock Style="{StaticResource PageHint}" HorizontalAlignment="Center" TextAlignment="Center"
+                           Margin="0,10,0,0" TextWrapping="Wrap" MaxWidth="380"
+                           Text="松开鼠标即可导入。也可以点操作条左侧的「添加 PDF」。文件只在本机处理，不会上传。" />
+              </StackPanel>
+            </Border>
           </Grid>
         </Border>
-        <TextBlock Grid.Row="4" Style="{StaticResource Caption}" Margin="0,11,0,0"
-                   Text="列表顺序就是导出顺序。按住页面拖动可以排序；双击页面直接进入内容编辑；Ctrl / Shift 可多选。" />
       </Grid>
 
-      <!-- 预览与导出 -->
-      <Border Grid.Column="2" Background="{StaticResource SunkenBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
-        <Grid Margin="18,18,18,16">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-          </Grid.RowDefinitions>
-          <Grid Margin="0,0,0,12">
-            <TextBlock Text="页面预览" Style="{StaticResource SectionTitle}" />
-            <TextBlock x:Name="PreviewPosition" HorizontalAlignment="Right" Style="{StaticResource Caption}" />
-          </Grid>
-          <Border Grid.Row="1" Background="#E6EDE9" CornerRadius="8" Padding="12" MinHeight="180">
-            <Grid>
-              <Image x:Name="PreviewImage" Stretch="Uniform" SnapsToDevicePixels="True" ToolTip="双击放大预览" MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown" />
-              <TextBlock x:Name="PreviewPlaceholder" Text="选择一页，即可查看预览" Foreground="#7C9383" TextAlignment="Center"
-                         VerticalAlignment="Center" TextWrapping="Wrap" />
-            </Grid>
-          </Border>
-          <TextBlock Grid.Row="2" x:Name="PreviewCaption" Style="{StaticResource Caption}" Margin="0,10,0,12" MinHeight="16" />
-          <StackPanel Grid.Row="3">
-            <Button x:Name="ExportButton" Style="{StaticResource PrimaryButton}" Padding="16,11" Click="Export_Click" IsEnabled="False">
-              <StackPanel Orientation="Horizontal">
-                <Path Style="{StaticResource ButtonIcon}" Data="{StaticResource IconExport}" />
-                <TextBlock Text="导出新 PDF" Margin="8,0,0,0" />
-              </StackPanel>
-            </Button>
-            <TextBlock Style="{StaticResource Caption}" Margin="0,9,0,0" Text="不修改原文件，不添加水印；请选择新的文件名。" />
-          </StackPanel>
+      <GridSplitter Grid.Column="1" Width="18" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                    Background="Transparent" />
+
+      <!-- 预览：只负责看图，所有操作按钮统一收在顶部操作条里 -->
+      <Grid Grid.Column="2">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid Margin="0,0,0,10">
+          <TextBlock Text="页面预览" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+          <TextBlock x:Name="PreviewPosition" HorizontalAlignment="Right" Style="{StaticResource Caption}"
+                     VerticalAlignment="Center" />
         </Grid>
-      </Border>
+        <Border Grid.Row="1" Style="{StaticResource Card}" Background="{StaticResource SunkenBrush}" Padding="14">
+          <Grid>
+            <Image x:Name="PreviewImage" Stretch="Uniform" SnapsToDevicePixels="True" ToolTip="双击放大预览"
+                   MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown" />
+            <TextBlock x:Name="PreviewPlaceholder" Text="点左侧任意一页即可预览" Foreground="{StaticResource MutedBrush}"
+                       TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" />
+          </Grid>
+        </Border>
+        <TextBlock Grid.Row="2" x:Name="PreviewCaption" Style="{StaticResource Caption}" Margin="0,10,0,0" MinHeight="16"
+                   TextWrapping="Wrap" Text="双击预览图可放大；导出不会修改原文件，也不会加水印。" />
+      </Grid>
     </Grid>
 
-    <!-- 状态栏 -->
-    <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
-      <Grid Margin="20,0" Height="56">
-        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+    <!-- ============================================ 状态栏 -->
+    <Border Grid.Row="2" Style="{StaticResource StatusBar}">
+      <Grid Margin="24,0" Height="52">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
         <StackPanel VerticalAlignment="Center">
           <TextBlock x:Name="StatusText" Text="准备就绪，请添加 PDF。" FontSize="12" TextTrimming="CharacterEllipsis" />
-          <ProgressBar x:Name="BusyProgress" IsIndeterminate="True" Height="3" Visibility="Collapsed" Margin="0,7,25,0" Foreground="{StaticResource AccentBrush}" />
+          <ProgressBar x:Name="BusyProgress" IsIndeterminate="True" Height="3" Visibility="Collapsed" Margin="0,7,25,0"
+                       Foreground="{StaticResource AccentBrush}" />
         </StackPanel>
-        <Button Grid.Column="1" x:Name="CancelButton" Content="取消" Click="Cancel_Click" Visibility="Collapsed" Margin="12,0" VerticalAlignment="Center" />
+        <Button Grid.Column="1" x:Name="CancelButton" Content="取消" Click="Cancel_Click" Visibility="Collapsed"
+                Margin="12,0" VerticalAlignment="Center" />
       </Grid>
     </Border>
   </Grid>

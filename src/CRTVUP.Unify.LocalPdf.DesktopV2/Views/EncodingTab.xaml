@@ -10,18 +10,8 @@
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <!-- 页头：标题与说明在左，字符集与哈希选项在右。 -->
-    <Grid Grid.Row="0" Margin="20,16,20,12">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="Auto" />
-      </Grid.ColumnDefinitions>
-      <StackPanel VerticalAlignment="Center">
-        <TextBlock Text="编码与转换" Style="{StaticResource PageHeader}" />
-        <TextBlock Text="Base64 / Base32 / URL / Unicode / HTML / 十六进制、哈希、HMAC、AES、JWT、进制、颜色、命名风格、正则与时间戳；全部在本机换算。"
-                   Style="{StaticResource PageHint}" Margin="0,5,0,0" />
-      </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+    <!-- 选项条：标题和说明已由主窗口标题条显示，这里只放字符集与哈希选项。 -->
+    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="24,16,24,12">
         <TextBlock Text="字符集" Style="{StaticResource FieldLabel}" />
         <ComboBox x:Name="CharsetChoice" Width="112" SelectedIndex="0" Margin="0,0,14,0"
                   ToolTip="文本与字节互转时使用的本地代码页">
@@ -40,23 +30,24 @@
           <ComboBoxItem Content="SHA-512" />
         </ComboBox>
         <CheckBox x:Name="AutoRun" Content="自动转换" IsChecked="True" Margin="0,0,14,0" VerticalAlignment="Center" />
-        <CheckBox x:Name="Milliseconds" Content="毫秒时间戳" VerticalAlignment="Center" />
-      </StackPanel>
-    </Grid>
+      <CheckBox x:Name="Milliseconds" Content="毫秒时间戳" VerticalAlignment="Center" />
+    </StackPanel>
 
     <!-- 操作条：文本转换与文件操作分成两组，中间用竖线分隔。 -->
-    <WrapPanel Grid.Row="1" Margin="20,0,20,8">
-      <Button Content="转换" Click="Apply_Click" Margin="0,0,6,6" Padding="16,7" Style="{StaticResource PrimaryButton}" />
-      <Button Content="交换" Click="Swap_Click" Margin="0,0,6,6" Padding="12,7" ToolTip="把结果作为新的输入" />
-      <Border Width="1" Background="{StaticResource BorderBrush}" Margin="8,4,14,10" />
-      <Button Content="文件 → Base64" Click="FileToBase64_Click" Margin="0,0,6,6" Padding="12,7" />
-      <Button Content="Base64 → 新文件" Click="Base64ToFile_Click" Margin="0,0,6,6" Padding="12,7" />
-      <Button Content="计算文件哈希" Click="FileHash_Click" Margin="0,0,6,6" Padding="12,7" />
-      <Button Content="现在的时间戳" Click="Now_Click" Margin="0,0,6,6" Padding="12,7" />
-    </WrapPanel>
+    <Border Grid.Row="1" Style="{StaticResource ToolbarBar}">
+      <WrapPanel>
+        <Button Content="转换" Click="Apply_Click" Margin="0,0,6,4" Style="{StaticResource PrimaryButton}" />
+        <Button Content="交换" Click="Swap_Click" Margin="0,0,6,4" ToolTip="把结果作为新的输入" />
+        <Border Style="{StaticResource ToolbarSeparator}" />
+        <Button Content="文件 → Base64" Click="FileToBase64_Click" Margin="0,0,6,4" />
+        <Button Content="Base64 → 新文件" Click="Base64ToFile_Click" Margin="0,0,6,4" />
+        <Button Content="计算文件哈希" Click="FileHash_Click" Margin="0,0,6,4" />
+        <Button Content="现在的时间戳" Click="Now_Click" Margin="0,0,6,4" />
+      </WrapPanel>
+    </Border>
 
     <!-- 参数条：随所选转换方式显示需要的输入，不需要参数时整行隐藏。 -->
-    <Border x:Name="ParamBar" Grid.Row="2" Style="{StaticResource NoticeCard}" Margin="20,0,20,12" Padding="14,9"
+    <Border x:Name="ParamBar" Grid.Row="2" Style="{StaticResource NoticeCard}" Margin="24,0,24,12" Padding="14,9"
             Visibility="Collapsed">
       <WrapPanel>
         <TextBlock Text="参数" Style="{StaticResource SectionTitle}" Margin="0,0,16,0" />
@@ -69,7 +60,7 @@
       </WrapPanel>
     </Border>
 
-    <Grid Grid.Row="3" Margin="20,0,20,0">
+    <Grid Grid.Row="3" Margin="24,0,24,0">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="238" />
         <ColumnDefinition Width="*" />

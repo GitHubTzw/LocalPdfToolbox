@@ -18,14 +18,24 @@ internal static class ToolkitUiChecks
 {
     public static async Task RunAsync(string outputDirectory)
     {
-        // V2 的样式集中在自己的 Theme.xaml；测试进程共用 V1 的 Application，这里临时合并再还原。
+        // 测试宿主跑在 V1 的 Application 上，而 V1 把按钮、输入框、窗口样式直接写在
+        // Application.Resources 里。自有条目的优先级高于合并字典，会把 V2 主题整个盖掉，
+        // 导致截图和断言看到的其实是 V1 的样式。这里先把 V1 的自有条目挪开，跑完再原样放回。
+        var application = Application.Current;
+        var shadowedKeys = application.Resources.Keys.Cast<object>().ToArray();
+        var shadowedValues = shadowedKeys.ToDictionary(key => key, key => application.Resources[key]);
+        foreach (var key in shadowedKeys) application.Resources.Remove(key);
         var theme = new ResourceDictionary { Source = new Uri("pack://application:,,,/LocalPdfV2;component/Theme.xaml") };
-        Application.Current.Resources.MergedDictionaries.Add(theme);
+        application.Resources.MergedDictionaries.Add(theme);
         try
         {
             await CheckMainWindowAsync(outputDirectory);
         }
-        finally { Application.Current.Resources.MergedDictionaries.Remove(theme); }
+        finally
+        {
+            application.Resources.MergedDictionaries.Remove(theme);
+            foreach (var pair in shadowedValues) application.Resources[pair.Key] = pair.Value;
+        }
     }
 
     private static async Task CheckMainWindowAsync(string outputDirectory)
@@ -39,17 +49,31 @@ internal static class ToolkitUiChecks
         {
             window = new V2.MainWindow();
             Layout(window, 1320, 860);
-            var tabs = (TabControl)window.FindName("Tabs");
-            Check(tabs.Items.Count == 5, "V2 主窗口包含五个页签");
-            var titles = tabs.Items.OfType<TabItem>().Select(HeaderText).ToArray();
+            var nav = (ListBox)window.FindName("Nav");
+            Check(window.SectionCount == 5 && nav.Items.Count == 5, "V2 主窗口包含五个功能区");
+            var titles = nav.Items.OfType<ListBoxItem>().Select(item => item.Content?.ToString() ?? "").ToArray();
             Check(titles.SequenceEqual(["PDF 工作台", "JSON / XML", "编码转换", "文件对比", "文件压缩"]),
-                "V2 页签标题与顺序正确");
+                "V2 导航标题与顺序正确");
+            Check(nav.SelectedIndex == 0, "V2 启动时默认停在 PDF 工作台");
+            Check(((TextBlock)window.FindName("HeaderTitle")).Text == "PDF 工作台", "V2 标题条跟随导航切换");
+            // 拖拽浮层默认收起，拖动文件时才出现。
+            Check(((FrameworkElement)window.FindName("DropOverlay")).Visibility == Visibility.Collapsed,
+                "V2 拖拽提示浮层默认隐藏");
 
             var pdfTab = (V2.Views.PdfTab)window.FindName("PdfWorkspace");
             await pdfTab.ImportFilesAsync([pdfPath]);
             Check(pdfTab.Pages.Count == 1 && pdfTab.Sources.Count == 1, "V2 PDF 页签可导入合成文档");
             Check(((ListBox)pdfTab.FindName("PageList")).Items.Count == 1, "V2 PDF 页签显示页面列表");
             Layout(window, 1320, 860);
+            // 主操作按钮必须是 V2 的强调色；如果被同名样式盖掉，这里会立刻失败。
+            var exportButton = (Button)pdfTab.FindName("ExportButton");
+            Check(exportButton.Background is SolidColorBrush accent && accent.Color == Color.FromRgb(0x6C, 0x71, 0xED),
+                "V2 主操作按钮使用 V2 强调色");
+            // 操作条上的分组竖线要有实际高度，否则会被 WrapPanel 压成 0 高度而看不见。
+            Check(((Border)pdfTab.FindName("PageGroupSeparator")).ActualHeight > 0, "V2 操作条分组竖线可见");
+            // 低频的文档工具收进「更多工具」菜单，避免操作条上堆满按钮。
+            var moreMenu = ((Button)pdfTab.FindName("MoreToolsButton")).ContextMenu;
+            Check(moreMenu is not null && moreMenu.Items.OfType<MenuItem>().Count() == 5, "V2 更多工具菜单包含五项文档工具");
             Save(window, Path.Combine(outputDirectory, "界面-V2-PDF工作台.png"), 1320, 860);
 
             var json = (V2.Views.JsonTab)window.FindName("JsonTools");
@@ -85,9 +109,9 @@ internal static class ToolkitUiChecks
             CheckSizeReduction(outputDirectory, pdfPath);
 
             // 逐个页签截图，确认布局不重叠、不空白。
-            for (var index = 0; index < tabs.Items.Count; index++)
+            for (var index = 0; index < nav.Items.Count; index++)
             {
-                tabs.SelectedIndex = index;
+                nav.SelectedIndex = index;
                 Layout(window, 1320, 860);
                 Save(window, Path.Combine(outputDirectory, $"界面-V2-页签{index + 1}.png"), 1320, 860);
             }
@@ -237,6 +261,115 @@ internal static class ToolkitUiChecks
 
         Check(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(pdfPath))) == pdfHash, "压缩过程未改动源 PDF");
         Check(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(imagePath))) == imageHash, "压缩过程未改动源图片");
+
+        CheckImageShrinks(outputDirectory);
+    }
+
+    /// <summary>
+    /// 图片压缩回归：平滑的大 PNG 必须真正变小（旧实现里 PNG 质量参数无效，33 MB 进 33 MB 出），
+    /// 已经压得很小的 JPEG 不能再被撑大，压不下去时必须放弃写入而不是产出更大的文件。
+    /// </summary>
+    private static void CheckImageShrinks(string outputDirectory)
+    {
+        var compressor = new V2.LocalFileCompressor();
+
+        // 平滑渐变 + 细噪声：模拟真实照片，旧实现在这里几乎压不动。
+        var photo = Path.Combine(outputDirectory, "v2-压缩-照片.png");
+        WriteGradientPng(photo, 2400, 1800);
+        var photoHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(photo)));
+        var photoResult = compressor.Compress(photo, Path.Combine(outputDirectory, "v2-压缩-照片-输出.png"),
+            new CompressOptions());
+        Check(photoResult.WroteOutput && photoResult.CompressedBytes < photoResult.OriginalBytes,
+            $"大 PNG 压缩后必须变小（{photoResult.OriginalBytes} → {photoResult.CompressedBytes}）");
+        Check(photoResult.SavedPercent > 20, $"大 PNG 压缩幅度应明显（实际 {photoResult.SavedPercent:0.#}%）");
+        Check(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(photo))) == photoHash, "图片压缩未改动源 PNG");
+
+        // 输出必须是能正常解码的图片，尺寸和原图一致。
+        using (var stream = File.OpenRead(photoResult.OutputPath))
+        {
+            var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+            Check(decoder.Frames.Count == 1 && decoder.Frames[0].PixelWidth == 2400 && decoder.Frames[0].PixelHeight == 1800,
+                "压缩后的 PNG 可正常解码且尺寸不变");
+        }
+
+        // 已经压到很小的 JPEG：不允许产出更大的文件。
+        var small = Path.Combine(outputDirectory, "v2-压缩-小图.jpg");
+        WriteGradientJpeg(small, 1600, 1200, quality: 40);
+        var smallResult = compressor.Compress(small, Path.Combine(outputDirectory, "v2-压缩-小图-输出.jpg"),
+            new CompressOptions { Quality = 85 });
+        Check(smallResult.CompressedBytes <= smallResult.OriginalBytes,
+            $"压缩结果不得大于原文件（{smallResult.OriginalBytes} → {smallResult.CompressedBytes}）");
+        if (!smallResult.WroteOutput)
+            Check(smallResult.OutputPath.Length == 0, "放弃写入时不应留下输出路径");
+
+        // 无损重编码也必须比 WPF 自带编码器更小：同一张图用两种方式各写一次做对比。
+        var reference = Path.Combine(outputDirectory, "v2-压缩-照片-参考.png");
+        using (var stream = File.OpenRead(photo))
+        {
+            var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(decoder.Frames[0]));
+            using var output = new FileStream(reference, FileMode.CreateNew, FileAccess.Write);
+            encoder.Save(output);
+        }
+        Check(new FileInfo(photoResult.OutputPath).Length < new FileInfo(reference).Length,
+            "本机 PNG 编码器应优于系统默认编码器");
+    }
+
+    /// <summary>合成一张平滑渐变加细噪声的大图，PNG 体积会很大，用来验证压缩率。</summary>
+    private static void WriteGradientPng(string path, int width, int height)
+    {
+        var stride = width * 3;
+        var pixels = new byte[stride * height];
+        var seed = 987654321u;
+        for (var y = 0; y < height; y++)
+        {
+            var offset = y * stride;
+            for (var x = 0; x < width; x++)
+            {
+                seed = seed * 1664525u + 1013904223u;
+                var noise = (int)((seed >> 24) & 0x1F) - 16;
+                pixels[offset] = Clamp(140 + 80 * Math.Cos(x * 0.0013 - y * 0.0011) + noise);
+                pixels[offset + 1] = Clamp(120 + 90 * Math.Sin((x + y) * 0.0017) + noise);
+                pixels[offset + 2] = Clamp(128 + 100 * Math.Sin(x * 0.0021) + noise);
+                offset += 3;
+            }
+        }
+        var source = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgr24, null, pixels, stride);
+        source.Freeze();
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(source));
+        using var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
+        encoder.Save(output);
+
+        static byte Clamp(double value) => (byte)Math.Clamp((int)value, 0, 255);
+    }
+
+    /// <summary>合成一张已经压过的 JPEG，用来验证压缩不会把文件撑大。</summary>
+    private static void WriteGradientJpeg(string path, int width, int height, int quality)
+    {
+        var stride = width * 3;
+        var pixels = new byte[stride * height];
+        var seed = 24681357u;
+        for (var y = 0; y < height; y++)
+        {
+            var offset = y * stride;
+            for (var x = 0; x < width; x++)
+            {
+                seed = seed * 1664525u + 1013904223u;
+                var noise = (int)((seed >> 24) & 0x1F) - 16;
+                pixels[offset] = (byte)Math.Clamp((int)(140 + 80 * Math.Cos(x * 0.0013 - y * 0.0011)) + noise, 0, 255);
+                pixels[offset + 1] = (byte)Math.Clamp((int)(120 + 90 * Math.Sin((x + y) * 0.0017)) + noise, 0, 255);
+                pixels[offset + 2] = (byte)Math.Clamp((int)(128 + 100 * Math.Sin(x * 0.0021)) + noise, 0, 255);
+                offset += 3;
+            }
+        }
+        var source = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgr24, null, pixels, stride);
+        source.Freeze();
+        var encoder = new JpegBitmapEncoder { QualityLevel = quality };
+        encoder.Frames.Add(BitmapFrame.Create(source));
+        using var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
+        encoder.Save(output);
     }
 
     private static void WriteNoisePng(string path, int width, int height)
@@ -258,11 +391,6 @@ internal static class ToolkitUiChecks
         using var output = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
         encoder.Save(output);
     }
-
-    private static string HeaderText(TabItem item) =>
-        item.Header is StackPanel panel
-            ? string.Concat(panel.Children.OfType<TextBlock>().Select(block => block.Text))
-            : item.Header?.ToString() ?? "";
 
     private static void Call(object target, string name) =>
         target.GetType().GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic)!

@@ -27,47 +27,38 @@
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <!-- 页头：标题与说明在左，对比模式与结果过滤在右。 -->
-    <Grid Grid.Row="0" Margin="20,16,20,12">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="Auto" />
-      </Grid.ColumnDefinitions>
-      <StackPanel VerticalAlignment="Center">
-        <TextBlock Text="文件对比" Style="{StaticResource PageHeader}" />
-        <TextBlock Text="文本逐行并排对比、二进制字节对比、目录递归对比；两侧内容只在本机内存中处理。"
-                   Style="{StaticResource PageHint}" Margin="0,5,0,0" />
-      </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+    <!-- 模式条：标题和说明已由主窗口标题条显示，这里只放对比模式与结果过滤。 -->
+    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="24,16,24,12">
         <ComboBox x:Name="ModeChoice" Width="132" SelectedIndex="0" Margin="0,0,14,0" SelectionChanged="Mode_Changed"
                   ToolTip="文本对比按行对齐；二进制对比只看字节；目录对比递归比较两个文件夹">
           <ComboBoxItem Content="文本对比" />
           <ComboBoxItem Content="二进制对比" />
           <ComboBoxItem Content="目录对比" />
         </ComboBox>
-        <CheckBox x:Name="OnlyDifferences" Content="只显示差异行" VerticalAlignment="Center"
-                  Checked="Filter_Changed" Unchecked="Filter_Changed" />
-      </StackPanel>
-    </Grid>
+      <CheckBox x:Name="OnlyDifferences" Content="只显示差异行" VerticalAlignment="Center"
+                Checked="Filter_Changed" Unchecked="Filter_Changed" />
+    </StackPanel>
 
     <!-- 操作条：执行动作、忽略规则与行内差异开关。 -->
-    <WrapPanel Grid.Row="1" Margin="20,0,20,12">
-      <Button Content="对比" Click="Compare_Click" Margin="0,0,6,6" Padding="18,7" Style="{StaticResource PrimaryButton}" />
-      <Button Content="交换两侧" Click="Swap_Click" Margin="0,0,6,6" Padding="12,7" />
-      <Button Content="清空" Click="Clear_Click" Margin="0,0,6,6" Padding="12,7" />
-      <Button Content="导出报告" Click="ExportReport_Click" Margin="0,0,6,6" Padding="12,7" ToolTip="把当前对比结果另存为新的本地文本文件" />
-      <Border Width="1" Background="{StaticResource BorderBrush}" Margin="8,4,14,10" />
-      <CheckBox x:Name="IgnoreCase" Content="忽略大小写" Margin="0,0,12,6" VerticalAlignment="Center" />
-      <CheckBox x:Name="IgnoreWhitespace" Content="忽略空白" Margin="0,0,12,6" VerticalAlignment="Center" />
-      <CheckBox x:Name="IgnoreBlankLines" Content="忽略空行" Margin="0,0,12,6" VerticalAlignment="Center" />
-      <CheckBox x:Name="IgnoreTrailing" Content="忽略行尾空白" Margin="0,0,12,6" VerticalAlignment="Center" />
-      <CheckBox x:Name="IgnoreComments" Content="忽略注释行" Margin="0,0,12,6" VerticalAlignment="Center" />
-      <CheckBox x:Name="InlineDiff" Content="行内差异高亮" IsChecked="True" VerticalAlignment="Center" Margin="0,0,0,6"
-                Checked="Filter_Changed" Unchecked="Filter_Changed" />
-    </WrapPanel>
+    <Border Grid.Row="1" Style="{StaticResource ToolbarBar}">
+      <WrapPanel>
+        <Button Content="对比" Click="Compare_Click" Margin="0,0,6,4" Style="{StaticResource PrimaryButton}" />
+        <Button Content="交换两侧" Click="Swap_Click" Margin="0,0,6,4" />
+        <Button Content="清空" Click="Clear_Click" Margin="0,0,6,4" />
+        <Button Content="导出报告" Click="ExportReport_Click" Margin="0,0,6,4" ToolTip="把当前对比结果另存为新的本地文本文件" />
+        <Border Style="{StaticResource ToolbarSeparator}" />
+        <CheckBox x:Name="IgnoreCase" Content="忽略大小写" Margin="0,0,12,4" VerticalAlignment="Center" />
+        <CheckBox x:Name="IgnoreWhitespace" Content="忽略空白" Margin="0,0,12,4" VerticalAlignment="Center" />
+        <CheckBox x:Name="IgnoreBlankLines" Content="忽略空行" Margin="0,0,12,4" VerticalAlignment="Center" />
+        <CheckBox x:Name="IgnoreTrailing" Content="忽略行尾空白" Margin="0,0,12,4" VerticalAlignment="Center" />
+        <CheckBox x:Name="IgnoreComments" Content="忽略注释行" Margin="0,0,12,4" VerticalAlignment="Center" />
+        <CheckBox x:Name="InlineDiff" Content="行内差异高亮" IsChecked="True" VerticalAlignment="Center" Margin="0,0,0,4"
+                  Checked="Filter_Changed" Unchecked="Filter_Changed" />
+      </WrapPanel>
+    </Border>
 
     <!-- 输入区：文本模式左右两栏。 -->
-    <Grid x:Name="TextInputPanel" Grid.Row="2" Height="180" Margin="20,0,20,0">
+    <Grid x:Name="TextInputPanel" Grid.Row="2" Height="220" Margin="24,0,24,0">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
@@ -102,7 +93,7 @@
 
     <!-- 输入区：二进制模式。 -->
     <Border x:Name="BinaryPanel" Grid.Row="2" Visibility="Collapsed" Style="{StaticResource Card}"
-            Background="{StaticResource SunkenBrush}" Margin="20,0,20,0" Padding="16">
+            Background="{StaticResource SunkenBrush}" Margin="24,0,24,0" Padding="16">
       <Grid>
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -119,7 +110,7 @@
 
     <!-- 输入区：目录模式。 -->
     <Border x:Name="DirectoryPanel" Grid.Row="2" Visibility="Collapsed" Style="{StaticResource Card}"
-            Background="{StaticResource SunkenBrush}" Margin="20,0,20,0" Padding="16">
+            Background="{StaticResource SunkenBrush}" Margin="24,0,24,0" Padding="16">
       <Grid>
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -134,13 +125,13 @@
       </Grid>
     </Border>
 
-    <Grid Grid.Row="3" Margin="20,14,20,8">
+    <Grid Grid.Row="3" Margin="24,14,24,8">
       <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
       <TextBlock x:Name="SummaryText" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Text="尚未对比" />
       <TextBlock x:Name="SimilarityText" Grid.Column="1" Style="{StaticResource Caption}" VerticalAlignment="Center" />
     </Grid>
 
-    <Border Grid.Row="4" Style="{StaticResource Card}" Margin="20,0,20,0">
+    <Border Grid.Row="4" Style="{StaticResource Card}" Margin="24,0,24,0">
       <Grid>
         <DataGrid x:Name="DiffGrid" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
                   GridLinesVisibility="None" SelectionUnit="FullRow" CanUserAddRows="False" CanUserDeleteRows="False"

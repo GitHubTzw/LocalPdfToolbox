@@ -18,6 +18,7 @@ public partial class ContentEditorWindow : Window
     private readonly int _rotation;
     private readonly List<byte[]> _undo = [];
     private PdfPageObjectCollection? _objects;
+    private PdfPageObjectInfo? _selected;
     private bool _busy;
     private bool _dirty;
     private bool _accepted;
@@ -64,9 +65,10 @@ public partial class ContentEditorWindow : Window
         PageSurface.Width = view.image.PixelWidth;
         PageSurface.Height = view.image.PixelHeight;
         PageImage.Source = view.image;
-        ObjectList.ItemsSource = _objects.Objects.Select(item => new ObjectRow(item)).ToArray();
+        _selected = null;
         PageWarnings.Text = string.Join("\n", _objects.Warnings);
         SelectionLayer.Children.Clear();
+        UpdateSelectionHint();
         UpdateButtons();
     }
 
@@ -118,25 +120,44 @@ public partial class ContentEditorWindow : Window
         finally { SetBusy(false); }
     }
 
-    private PdfPageObjectInfo? SelectedObject => (ObjectList.SelectedItem as ObjectRow)?.Item;
+    private PdfPageObjectInfo? SelectedObject => _selected;
 
-    private void ObjectList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    /// <summary>
+    /// 选中页面上的一个对象（或传 null 取消选择）。
+    /// 文字对象会把原文和字号回填到右侧面板，方便直接改。
+    /// </summary>
+    private void SelectObject(PdfPageObjectInfo? item)
     {
-        if (SelectedObject is { } item)
+        _selected = item;
+        if (item is not null)
         {
-            if (!_busy) SetMode(EditMode.Select);
             if (item.Kind == PdfObjectKind.Text)
             {
                 ContentTextBox.Text = item.Text;
                 FontSizeInput.Text = item.FontSize.ToString("0.##", CultureInfo.InvariantCulture);
             }
-            ObjectHint.Text = item.Limitation ?? (item.Kind == PdfObjectKind.Text
-                ? "PDF 文字可能按词或字拆分；替换保留原起点，较长文字可能与相邻内容重叠。"
-                : $"已选中：{ObjectRow.KindLabel(item.Kind)}。");
             DrawSelection(item.PreviewBounds);
         }
-        else ObjectHint.Text = "尚未选择对象。";
+        else
+        {
+            SelectionLayer.Children.Clear();
+        }
+        UpdateSelectionHint();
         UpdateButtons();
+    }
+
+    /// <summary>右侧“当前选中”说明：说清选到了什么、能不能改、有什么限制。</summary>
+    private void UpdateSelectionHint()
+    {
+        if (ObjectHint is null) return;
+        if (SelectedObject is not { } item)
+        {
+            ObjectHint.Text = "尚未选择对象。在左侧页面上单击文字、图片或图形即可选中。";
+            return;
+        }
+        ObjectHint.Text = item.Limitation ?? (item.Kind == PdfObjectKind.Text
+            ? "已选中文字。PDF 文字可能按词或字拆分；替换保留原起点，较长文字可能与相邻内容重叠。"
+            : $"已选中：{ObjectRow.KindLabel(item.Kind)}。");
     }
 
     private void UpdateButtons()
@@ -213,10 +234,20 @@ public partial class ContentEditorWindow : Window
 
     private void Highlight_Click(object sender, RoutedEventArgs e) => SetMode(EditMode.Highlight);
     private void Rectangle_Click(object sender, RoutedEventArgs e) => SetMode(EditMode.Rectangle);
-    private void SelectMode_Click(object sender, RoutedEventArgs e)
+    private void SelectMode_Click(object sender, RoutedEventArgs e) => ToolSelect.IsChecked = true;
+
+    // 顶部工具组：每个单选按钮对应一种编辑模式，切换时同步提示文字和光标。
+    // XAML 里“选择”默认勾选，解析阶段就会触发一次 Checked，此时控件树尚未建好，需要跳过。
+    private void ToolSelect_Checked(object sender, RoutedEventArgs e) => SetModeIfReady(EditMode.Select);
+    private void ToolText_Checked(object sender, RoutedEventArgs e) => SetModeIfReady(EditMode.InsertText);
+    private void ToolImage_Checked(object sender, RoutedEventArgs e) => SetModeIfReady(EditMode.InsertImage);
+    private void ToolHighlight_Checked(object sender, RoutedEventArgs e) => SetModeIfReady(EditMode.Highlight);
+    private void ToolRect_Checked(object sender, RoutedEventArgs e) => SetModeIfReady(EditMode.Rectangle);
+
+    private void SetModeIfReady(EditMode mode)
     {
-        SetMode(EditMode.Select);
-        if (SelectedObject is { } item) DrawSelection(item.PreviewBounds);
+        if (SelectionLayer is null || ModeHint is null) return;
+        SetMode(mode);
     }
     private void CancelEdit_Click(object sender, RoutedEventArgs e) => Close();
     private void SaveEdit_Click(object sender, RoutedEventArgs e)
@@ -257,14 +288,14 @@ public partial class ContentEditorWindow : Window
         ClearPendingImage();
         ContentTextBox.Clear();
         ContentTextBox.IsUndoEnabled = false;
-        ObjectList.ItemsSource = null;
+        _selected = null;
         _objects = null;
         PageImage.Source = null;
     }
 
-    private sealed record ObjectRow(PdfPageObjectInfo Item)
+    /// <summary>对象类型的中文名，只在提示文字里用。</summary>
+    private static class ObjectRow
     {
-        public string Label => $"{Item.Index + 1} · {KindLabel(Item.Kind)}  {(Item.Text.Length > 24 ? Item.Text[..24] + "…" : Item.Text).Replace('\r', ' ').Replace('\n', ' ')}{(Item.CanEdit ? "" : " [受限]")}";
         public static string KindLabel(PdfObjectKind kind) => kind switch { PdfObjectKind.Text => "文字", PdfObjectKind.Image => "图片", PdfObjectKind.Path => "图形", PdfObjectKind.Form => "组合图形", _ => "其他" };
     }
 }
